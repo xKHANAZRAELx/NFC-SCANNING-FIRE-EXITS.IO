@@ -3,11 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Scanner</title>
-    <script src="nfc-scanner.js" defer></script>
+    <title>NFC Test</title>
 </head>
 <body>
-    <h1>NFC Scanner</h1>
-    <p id="status">Checking NFC support...</p>
+    <h1>NFC Test</h1>
+    <button id="startScan">Start NFC Scan</button>
+    <p id="status">NFC Status: <span id="nfcStatus">Not supported</span></p>
+    <p id="nfcData">NFC Data: <span id="nfcResult">None</span></p>
+
+    <script>
+        document.getElementById('startScan').addEventListener('click', async () => {
+            const statusElement = document.getElementById('nfcStatus');
+            const resultElement = document.getElementById('nfcResult');
+            
+            if ('NFCReader' in window) {
+                statusElement.textContent = 'Supported';
+                try {
+                    const nfcReader = new NFCReader();
+
+                    const scan = async () => {
+                        try {
+                            const nfcData = await nfcReader.scan();
+                            resultElement.textContent = nfcData;
+                        } catch (error) {
+                            resultElement.textContent = `Error: ${error.message}`;
+                        }
+                    };
+
+                    scan();
+                } catch (error) {
+                    statusElement.textContent = `Error: ${error.message}`;
+                }
+            } else {
+                statusElement.textContent = 'Not Supported';
+            }
+        });
+    </script>
 </body>
 </html>
