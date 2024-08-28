@@ -1,7 +1,8 @@
-document.getElementById('scanButton').addEventListener('click', () => {
+document.addEventListener('DOMContentLoaded', () => {
     if ('NDEFReader' in window) {
         const reader = new NDEFReader();
         reader.scan().then(() => {
+            console.log('NFC reader is ready to scan.');
             reader.onreading = (event) => {
                 const record = event.message.records[0];
                 const decoder = new TextDecoder();
@@ -21,7 +22,10 @@ document.getElementById('scanButton').addEventListener('click', () => {
                 })
                 .catch(error => console.error('Error:', error));
             };
-        }).catch(error => console.error('Error:', error));
+        }).catch(error => {
+            console.error('Error during NFC scan:', error);
+            alert('NFC scanning is not supported in your browser.');
+        });
     } else {
         alert('NFC scanning is not supported in your browser.');
     }
