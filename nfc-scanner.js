@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const reader = new NDEFReader();
         reader.scan().then(() => {
             console.log('NFC reader is ready to scan.');
+            document.getElementById('status').textContent = 'NFC reader is ready to scan. Please hold your device near an NFC tag.';
+
             reader.onreading = (event) => {
                 const record = event.message.records[0];
                 const decoder = new TextDecoder();
@@ -14,20 +16,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         location: location,
                         timeOfDay: timeOfDay
-                    })
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 })
                 .then(response => response.text())
                 .then(data => {
-                    alert('NFC tag scanned and data sent to Google Sheets.');
+                    console.log('Data sent to Google Sheets:', data);
+                    document.getElementById('status').textContent = 'NFC tag scanned and data sent to Google Sheets.';
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error sending data to Google Sheets:', error);
+                    document.getElementById('status').textContent = 'Error sending data to Google Sheets.';
+                });
             };
+
         }).catch(error => {
             console.error('Error during NFC scan:', error);
-            alert('NFC scanning is not supported in your browser.');
+            document.getElementById('status').textContent = 'Error: NFC scanning is not supported or failed.';
         });
     } else {
-        alert('NFC scanning is not supported in your browser.');
+        document.getElementById('status').textContent = 'NFC scanning is not supported in your browser.';
     }
 });
 
