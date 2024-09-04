@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC Tag Scanner</title>
+</head>
+<body>
+    <h1>NFC Tag Scanner</h1>
+    <button id="scanBtn">Scan NFC Tag</button>
+    <div id="output"></div>
+
+    <script>
+        // Check if NFC is supported
+        if ('NDEFReader' in window) {
+            document.getElementById('scanBtn').addEventListener('click', async () => {
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+
+                    ndef.onreading = (event) => {
+                        const tagData = event.message.records[0].data;
+                        const tagText = new TextDecoder().decode(tagData);
+                        document.getElementById('output').innerHTML = `Tag Scanned: ${tagText}`;
+                    };
+                } catch (error) {
+                    document.getElementById('output').innerHTML = `NFC scan failed: ${error.message}`;
+                }
+            });
+        } else {
+            document.getElementById('output').innerHTML = "NFC not supported on this device.";
+        }
+    </script>
+</body>
+</html>
