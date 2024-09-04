@@ -36,9 +36,9 @@
     <div id="output">Bring an NFC tag close to scan...</div>
 
     <script>
-        // Load initial status from localStorage
         const areas = ['Area A', 'Area B', 'Area C'];
 
+        // Update the visual status of each area
         function updateAreaStatus() {
             areas.forEach(area => {
                 const areaElement = document.getElementById(area.toLowerCase().replace(" ", ""));
@@ -53,11 +53,15 @@
             });
         }
 
-        // Call this function to update the visual status
+        // Load initial status from localStorage
         updateAreaStatus();
 
-        // Automatically start NFC scanning
-        if ('NDEFReader' in window) {
+        // Check if Web NFC is supported in this browser
+        function isWebNFCSupported() {
+            return 'NDEFReader' in window;
+        }
+
+        if (isWebNFCSupported()) {
             const output = document.getElementById('output');
 
             async function startNFCScan() {
@@ -66,15 +70,24 @@
                     await ndef.scan();
 
                     ndef.onreading = (event) => {
-                        const tagData = event.message.records[0].data;
-                        const tagText = new TextDecoder().decode(tagData);
-                        
-                        // Show scanned tag message
+                        // Extract NFC tag data as text
+                        const record = event.message.records[0];
+                        let tagText = '';
+
+                        // Handle text-type NFC tags (most common)
+                        if (record.recordType === "text") {
+                            const textDecoder = new TextDecoder(record.encoding);
+                            tagText = textDecoder.decode(record.data);
+                        }
+
+                        // Log the scanned tag and show it on the output
                         output.innerHTML = `Tag Scanned: ${tagText}`;
 
-                        // Check if the scanned tag matches an area
-                        if (areas.includes(tagText)) {
-                            localStorage.setItem(tagText, 'scanned');
+                        // Check if the scanned text matches any area
+                        if (areas.includes(tagText.trim())) {
+                            // Store scan status in localStorage
+                            localStorage.setItem(tagText.trim(), 'scanned');
+                            // Update the UI
                             updateAreaStatus();
                         } else {
                             output.innerHTML = `Unknown area scanned: ${tagText}`;
@@ -85,10 +98,11 @@
                 }
             }
 
-            // Start scanning when the page loads
+            // Start scanning automatically
             window.addEventListener('load', startNFCScan);
         } else {
-            document.getElementById('output').innerHTML = "NFC not supported on this device.";
+            const output = document.getElementById('output');
+            output.innerHTML = "NFC not supported in this browser. Try using Samsung Internet or enable NFC in Chrome flags.";
         }
     </script>
 </body>
