@@ -3,14 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Scanner</title>
+    <title>NFC Tag Scanner with Status</title>
+    <style>
+        .area {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid black;
+            display: inline-block;
+            width: 100px;
+            text-align: center;
+        }
+        .scanned {
+            background-color: green;
+            color: white;
+        }
+        .not-scanned {
+            background-color: red;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <h1>NFC Tag Scanner</h1>
+    <p>Scan the NFC tag of each area to update its status:</p>
+
+    <div id="areas">
+        <div class="area not-scanned" id="areaA">Area A</div>
+        <div class="area not-scanned" id="areaB">Area B</div>
+        <div class="area not-scanned" id="areaC">Area C</div>
+    </div>
+
     <div id="output">Bring an NFC tag close to scan...</div>
 
     <script>
-        // Automatically start NFC scanning on page load
+        // Load initial status from localStorage
+        const areas = ['Area A', 'Area B', 'Area C'];
+
+        function updateAreaStatus() {
+            areas.forEach(area => {
+                const areaElement = document.getElementById(area.toLowerCase().replace(" ", ""));
+                const status = localStorage.getItem(area);
+                if (status === 'scanned') {
+                    areaElement.classList.remove('not-scanned');
+                    areaElement.classList.add('scanned');
+                } else {
+                    areaElement.classList.remove('scanned');
+                    areaElement.classList.add('not-scanned');
+                }
+            });
+        }
+
+        // Call this function to update the visual status
+        updateAreaStatus();
+
+        // Automatically start NFC scanning
         if ('NDEFReader' in window) {
             const output = document.getElementById('output');
 
@@ -22,7 +68,17 @@
                     ndef.onreading = (event) => {
                         const tagData = event.message.records[0].data;
                         const tagText = new TextDecoder().decode(tagData);
+                        
+                        // Show scanned tag message
                         output.innerHTML = `Tag Scanned: ${tagText}`;
+
+                        // Check if the scanned tag matches an area
+                        if (areas.includes(tagText)) {
+                            localStorage.setItem(tagText, 'scanned');
+                            updateAreaStatus();
+                        } else {
+                            output.innerHTML = `Unknown area scanned: ${tagText}`;
+                        }
                     };
                 } catch (error) {
                     output.innerHTML = `NFC scan failed: ${error.message}`;
