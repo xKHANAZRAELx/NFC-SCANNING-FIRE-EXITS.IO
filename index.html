@@ -35,21 +35,8 @@
         td.status {
             font-weight: bold;
         }
-        td.not-scanned {
-            background-color: red;
-            color: white;
-        }
-        td.scanned {
-            background-color: green;
-            color: white;
-        }
-        td.time {
-            font-size: 0.9em;
-            color: #666;
-        }
-        .date-icon {
-            cursor: pointer;
-            font-size: 18px;
+        .icon {
+            font-size: 1.5em;
         }
         #output {
             text-align: center;
@@ -79,9 +66,11 @@
     <table>
         <thead>
             <tr>
-                <th>Fire Exit</th>
-                <th>Status</th>
-                <th>Logs</th>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Night</th>
+                <th>Early</th>
+                <th>Late</th>
             </tr>
         </thead>
         <tbody id="fireExitTable">
@@ -105,21 +94,7 @@
 
         const webAppURL = "https://script.google.com/macros/s/YOUR_GOOGLE_WEB_APP_URL/exec";  // Replace with your Google Apps Script Web App URL
 
-        // Define time ranges for night, early, and late shifts
-        const shiftTimes = {
-            night: { start: "00:00", end: "06:00" },
-            early: { start: "06:00", end: "14:00" },
-            late: { start: "14:00", end: "23:59" }
-        };
-
-        // Function to check if the current time is within a specific shift
-        function isShiftTime(shift) {
-            const now = new Date();
-            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            return currentTime >= shift.start && currentTime <= shift.end;
-        }
-
-        // Function to generate table rows for fire exits
+        // Generate the table rows
         function generateTable() {
             const tableBody = document.getElementById("fireExitTable");
 
@@ -127,23 +102,34 @@
                 const row = document.createElement("tr");
                 row.id = exit.name.replace(/ /g, "");
 
-                const nameCell = document.createElement("td");
-                nameCell.textContent = exit.name;
+                const dateCell = document.createElement("td");
+                dateCell.id = `${exit.name.replace(/ /g, "")}Date`;
+                dateCell.textContent = "-";
 
-                const statusCell = document.createElement("td");
-                statusCell.classList.add("status", "not-scanned");
-                statusCell.id = `${exit.name.replace(/ /g, "")}Status`;
-                statusCell.textContent = "Not Scanned";
+                const locationCell = document.createElement("td");
+                locationCell.id = `${exit.name.replace(/ /g, "")}Location`;
+                locationCell.textContent = exit.name; // Initially set location to Fire Exit X
 
-                const logCell = document.createElement("td");
-                const dateIcon = document.createElement("span");
-                dateIcon.classList.add("date-icon");
-                dateIcon.innerHTML = "📅"; // Unicode calendar icon
-                logCell.appendChild(dateIcon);
+                const nightCell = document.createElement("td");
+                nightCell.id = `${exit.name.replace(/ /g, "")}Night`;
+                nightCell.classList.add("icon");
+                nightCell.textContent = "🔴";
 
-                row.appendChild(nameCell);
-                row.appendChild(statusCell);
-                row.appendChild(logCell);
+                const earlyCell = document.createElement("td");
+                earlyCell.id = `${exit.name.replace(/ /g, "")}Early`;
+                earlyCell.classList.add("icon");
+                earlyCell.textContent = "🔴";
+
+                const lateCell = document.createElement("td");
+                lateCell.id = `${exit.name.replace(/ /g, "")}Late`;
+                lateCell.classList.add("icon");
+                lateCell.textContent = "🔴";
+
+                row.appendChild(dateCell);
+                row.appendChild(locationCell);
+                row.appendChild(nightCell);
+                row.appendChild(earlyCell);
+                row.appendChild(lateCell);
                 tableBody.appendChild(row);
             });
         }
@@ -192,25 +178,43 @@
 
         // Update scan status based on the current shift
         async function updateScanStatus(exitName) {
-            const statusElement = document.getElementById(`${exitName.replace(/ /g, "")}Status`);
+            const dateCell = document.getElementById(`${exitName.replace(/ /g, "")}Date`);
+            const locationCell = document.getElementById(`${exitName.replace(/ /g, "")}Location`);
+            const nightCell = document.getElementById(`${exitName.replace(/ /g, "")}Night`);
+            const earlyCell = document.getElementById(`${exitName.replace(/ /g, "")}Early`);
+            const lateCell = document.getElementById(`${exitName.replace(/ /g, "")}Late`);
 
-            // Check if it's during the night shift
-            if (isShiftTime(shiftTimes.night)) {
-                statusElement.classList.remove('not-scanned');
-                statusElement.classList.add('scanned');
-                statusElement.textContent = 'Scanned (Night)';
-            } else if (isShiftTime(shiftTimes.early)) {
-                statusElement.classList.remove('not-scanned');
-                statusElement.classList.add('scanned');
-                statusElement.textContent = 'Scanned (Early)';
-            } else if (isShiftTime(shiftTimes.late)) {
-                statusElement.classList.remove('not-scanned');
-                statusElement.classList.add('scanned');
-                statusElement.textContent = 'Scanned (Late)';
+            // Get current time to determine the shift
+            const now = new Date();
+            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const formattedDate = now.toLocaleDateString('en-GB'); // Format: DD/MM/YYYY
+
+            let nightIcon = "🔴";
+            let earlyIcon = "🔴";
+            let lateIcon = "🔴";
+
+            let shift = "";
+
+            if (currentTime >= "00:00" && currentTime <= "06:00") {
+                shift = "Night";
+                nightIcon = "🟢"; // Turn Night icon green
+            } else if (currentTime >= "06:00" && currentTime <= "14:00") {
+                shift = "Early";
+                earlyIcon = "🟢"; // Turn Early icon green
+            } else if (currentTime >= "14:00" && currentTime <= "23:59") {
+                shift = "Late";
+                lateIcon = "🟢"; // Turn Late icon green
             }
 
+            // Update the shift icons in the table
+            nightCell.textContent = nightIcon;
+            earlyCell.textContent = earlyIcon;
+            lateCell.textContent = lateIcon;
+            dateCell.textContent = formattedDate;
+            locationCell.textContent = exitName; // Set location to the Fire Exit name
+
             try {
-                const requestData = { fireExit: exitName };
+                const requestData = { fireExit: exitName }; // Update location in Google Sheets as well
                 await fetch(webAppURL, {
                     method: 'POST',
                     body: JSON.stringify(requestData),
@@ -228,10 +232,17 @@
 
                 if (resetStatus.status === 'success') {
                     fireExits.forEach(exit => {
-                        const statusElement = document.getElementById(`${exit.name.replace(/ /g, "")}Status`);
-                        statusElement.classList.remove('scanned');
-                        statusElement.classList.add('not-scanned');
-                        statusElement.textContent = 'Not Scanned';
+                        const dateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Date`);
+                        const locationCell = document.getElementById(`${exit.name.replace(/ /g, "")}Location`);
+                        const nightCell = document.getElementById(`${exit.name.replace(/ /g, "")}Night`);
+                        const earlyCell = document.getElementById(`${exit.name.replace(/ /g, "")}Early`);
+                        const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
+
+                        dateCell.textContent = "-";
+                        locationCell.textContent = exit.name; // Reset to Fire Exit name
+                        nightCell.textContent = "🔴";
+                        earlyCell.textContent = "🔴";
+                        lateCell.textContent = "🔴";
                     });
                     alert("All scans have been reset.");
                 }
@@ -248,10 +259,17 @@
 
                 if (deleteStatus.status === 'success') {
                     fireExits.forEach(exit => {
-                        const statusElement = document.getElementById(`${exit.name.replace(/ /g, "")}Status`);
-                        statusElement.classList.remove('scanned');
-                        statusElement.classList.add('not-scanned');
-                        statusElement.textContent = 'Not Scanned';
+                        const dateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Date`);
+                        const locationCell = document.getElementById(`${exit.name.replace(/ /g, "")}Location`);
+                        const nightCell = document.getElementById(`${exit.name.replace(/ /g, "")}Night`);
+                        const earlyCell = document.getElementById(`${exit.name.replace(/ /g, "")}Early`);
+                        const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
+
+                        dateCell.textContent = "-";
+                        locationCell.textContent = exit.name; // Reset to Fire Exit name
+                        nightCell.textContent = "🔴";
+                        earlyCell.textContent = "🔴";
+                        lateCell.textContent = "🔴";
                     });
                     alert("All data has been deleted.");
                 }
