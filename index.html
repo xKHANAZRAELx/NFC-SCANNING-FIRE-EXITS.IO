@@ -61,7 +61,7 @@
 </head>
 <body>
 
-    <h1>Fire Exit NFC Scanning Status</h1>
+    <h1>Fire Exit NFC Scanning Status2</h1>
 
     <table>
         <thead>
@@ -92,7 +92,7 @@
             fireExits.push({ name: `Fire Exit ${i}` });
         }
 
-        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev";  // Replace with your Google Apps Script Web App URL
+        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev";  // Your Google Apps Script Web App URL
 
         // Fetch current data from Google Sheets and update the table on page load
         async function fetchData() {
@@ -107,12 +107,14 @@
                     const earlyCell = document.getElementById(`${exit.name.replace(/ /g, "")}Early`);
                     const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
 
-                    // Update table based on the data from Google Sheets
-                    dateCell.textContent = data[index][0];  // Date
-                    locationCell.textContent = data[index][1];  // Location
-                    nightCell.textContent = data[index][2];  // Night icon
-                    earlyCell.textContent = data[index][3];  // Early icon
-                    lateCell.textContent = data[index][4];  // Late icon
+                    // If the data exists for the index, update the table cells
+                    if (data[index]) {
+                        dateCell.textContent = data[index][0];  // Date
+                        locationCell.textContent = data[index][1];  // Location
+                        nightCell.textContent = data[index][2];  // Night icon
+                        earlyCell.textContent = data[index][3];  // Early icon
+                        lateCell.textContent = data[index][4];  // Late icon
+                    }
                 });
             } catch (error) {
                 console.log("Error fetching data:", error);
@@ -221,16 +223,11 @@
             let earlyIcon = "🔴";
             let lateIcon = "🔴";
 
-            let shift = "";
-
             if (currentTime >= "00:00" && currentTime <= "06:00") {
-                shift = "Night";
                 nightIcon = "🟢"; // Turn Night icon green
             } else if (currentTime >= "06:00" && currentTime <= "14:00") {
-                shift = "Early";
                 earlyIcon = "🟢"; // Turn Early icon green
             } else if (currentTime >= "14:00" && currentTime <= "23:59") {
-                shift = "Late";
                 lateIcon = "🟢"; // Turn Late icon green
             }
 
