@@ -79,6 +79,8 @@
             fireExits.push({ name: `Fire Exit ${i}` });
         }
 
+        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev";  // Replace with your Google Apps Script Web App URL
+
         // Function to generate table rows for fire exits
         function generateTable() {
             const tableBody = document.getElementById("fireExitTable");
@@ -110,41 +112,52 @@
         // Generate the table on page load
         generateTable();
 
-        // Load the saved scan statuses from localStorage
-        function loadScanStatus() {
-            fireExits.forEach(exit => {
-                const statusElement = document.getElementById(`${exit.name.replace(/ /g, "")}Status`);
-                const timeElement = document.getElementById(`${exit.name.replace(/ /g, "")}Time`);
-                const scannedStatus = localStorage.getItem(exit.name);
-                const scannedTime = localStorage.getItem(`${exit.name}_time`);
+        // Load scan status from Google Sheets
+        async function loadScanStatus() {
+            try {
+                const response = await fetch(webAppURL);
+                const data = await response.json();
 
-                if (scannedStatus === 'scanned') {
-                    statusElement.classList.remove('not-scanned');
-                    statusElement.classList.add('scanned');
-                    statusElement.textContent = 'Scanned';
-                    timeElement.textContent = scannedTime;
-                }
-            });
+                fireExits.forEach((exit, index) => {
+                    const statusElement = document.getElementById(`${exit.name.replace(/ /g, "")}Status`);
+                    const timeElement = document.getElementById(`${exit.name.replace(/ /g, "")}Time`);
+
+                    if (data[index][1] === "Scanned") {
+                        statusElement.classList.remove('not-scanned');
+                        statusElement.classList.add('scanned');
+                        statusElement.textContent = 'Scanned';
+                        timeElement.textContent = data[index][2];
+                    }
+                });
+            } catch (error) {
+                console.log("Error loading scan status:", error);
+            }
         }
 
-        // Function to update scan status
-        function updateScanStatus(exitName) {
-            const statusElement = document.getElementById(`${exitName.replace(/ /g, "")}Status`);
-            const timeElement = document.getElementById(`${exitName.replace(/ /g, "")}Time`);
+        // Update scan status on Google Sheets
+        async function updateScanStatus(exitName) {
             const currentTime = new Date().toLocaleString();
+            const requestData = { fireExit: exitName };
 
-            // Update to scanned status
-            statusElement.classList.remove('not-scanned');
-            statusElement.classList.add('scanned');
-            statusElement.textContent = 'Scanned';
-            timeElement.textContent = currentTime;
+            try {
+                const response = await fetch(webAppURL, {
+                    method: 'POST',
+                    body: JSON.stringify(requestData),
+                });
 
-            // Save to localStorage
-            localStorage.setItem(exitName, 'scanned');
-            localStorage.setItem(`${exitName}_time`, currentTime);
+                const statusElement = document.getElementById(`${exitName.replace(/ /g, "")}Status`);
+                const timeElement = document.getElementById(`${exitName.replace(/ /g, "")}Time`);
+
+                statusElement.classList.remove('not-scanned');
+                statusElement.classList.add('scanned');
+                statusElement.textContent = 'Scanned';
+                timeElement.textContent = currentTime;
+            } catch (error) {
+                console.log("Error updating scan status:", error);
+            }
         }
 
-        // Load scan status when the page loads
+        // Load scan status from Google Sheets when the page loads
         loadScanStatus();
 
         // Automatically start NFC scanning on page load
@@ -160,16 +173,13 @@
                         const record = event.message.records[0];
                         let tagText = '';
 
-                        // Decode the NFC tag data as text
                         if (record.recordType === "text") {
                             const textDecoder = new TextDecoder(record.encoding);
                             tagText = textDecoder.decode(record.data);
                         }
 
-                        // Log the scanned tag
                         output.innerHTML = `Tag Scanned: ${tagText}`;
 
-                        // Update the scan status for the corresponding fire exit
                         if (fireExits.some(exit => exit.name === tagText)) {
                             updateScanStatus(tagText);
                         } else {
