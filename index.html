@@ -7,14 +7,11 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             background-color: #f4f4f4;
         }
         h1 {
             text-align: center;
             color: #333;
-            margin-top: 20px;
         }
         table {
             width: 90%;
@@ -52,7 +49,6 @@
             background-color: #333;
             color: white;
             border: none;
-            cursor: pointer;
         }
         button:hover {
             background-color: #555;
@@ -61,7 +57,7 @@
 </head>
 <body>
 
-    <h1>Fire Exit NFC Scanning Status2</h1>
+    <h1>Fire Exit NFC Scanning Status</h1>
 
     <table>
         <thead>
@@ -74,7 +70,7 @@
             </tr>
         </thead>
         <tbody id="fireExitTable">
-            <!-- Dynamic rows for 100+ exits will be generated here -->
+            <!-- Dynamic rows will be generated here -->
         </tbody>
     </table>
 
@@ -92,9 +88,9 @@
             fireExits.push({ name: `Fire Exit ${i}` });
         }
 
-        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev";  // Your Google Apps Script Web App URL
+        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev"; // Your web app URL
 
-        // Fetch current data from Google Sheets and update the table on page load
+        // Fetch data from Google Sheets
         async function fetchData() {
             try {
                 const response = await fetch(webAppURL);
@@ -107,13 +103,12 @@
                     const earlyCell = document.getElementById(`${exit.name.replace(/ /g, "")}Early`);
                     const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
 
-                    // If the data exists for the index, update the table cells
                     if (data[index]) {
-                        dateCell.textContent = data[index][0];  // Date
-                        locationCell.textContent = data[index][1];  // Location
-                        nightCell.textContent = data[index][2];  // Night icon
-                        earlyCell.textContent = data[index][3];  // Early icon
-                        lateCell.textContent = data[index][4];  // Late icon
+                        dateCell.textContent = data[index][0];
+                        locationCell.textContent = data[index][1];
+                        nightCell.textContent = data[index][2];
+                        earlyCell.textContent = data[index][3];
+                        lateCell.textContent = data[index][4];
                     }
                 });
             } catch (error) {
@@ -121,7 +116,7 @@
             }
         }
 
-        // Generate the table rows
+        // Generate table rows dynamically
         function generateTable() {
             const tableBody = document.getElementById("fireExitTable");
 
@@ -135,7 +130,7 @@
 
                 const locationCell = document.createElement("td");
                 locationCell.id = `${exit.name.replace(/ /g, "")}Location`;
-                locationCell.textContent = exit.name; // Initially set location to Fire Exit X
+                locationCell.textContent = exit.name;
 
                 const nightCell = document.createElement("td");
                 nightCell.id = `${exit.name.replace(/ /g, "")}Night`;
@@ -161,13 +156,13 @@
             });
         }
 
-        // Generate the table on page load and fetch data from Google Sheets
+        // Fetch data on page load
         window.addEventListener('load', async () => {
             generateTable();
-            await fetchData();  // Fetch current data from Google Sheets
+            await fetchData();
         });
 
-        // Automatically start NFC scanning on page load
+        // Handle NFC scanning
         if ('NDEFReader' in window) {
             const output = document.getElementById('output');
 
@@ -180,21 +175,13 @@
                         const record = event.message.records[0];
                         let tagText = '';
 
-                        // Decode the NFC tag data as text
                         if (record.recordType === "text") {
                             const textDecoder = new TextDecoder(record.encoding);
                             tagText = textDecoder.decode(record.data);
                         }
 
-                        // Log the scanned tag
                         output.innerHTML = `Tag Scanned: ${tagText}`;
-
-                        // Update the scan status based on the current shift
-                        if (fireExits.some(exit => exit.name === tagText)) {
-                            updateScanStatus(tagText);
-                        } else {
-                            output.innerHTML = `Unknown fire exit scanned: ${tagText}`;
-                        }
+                        updateScanStatus(tagText);
                     };
                 } catch (error) {
                     output.innerHTML = `NFC scan failed: ${error.message}`;
@@ -206,7 +193,7 @@
             document.getElementById('output').innerHTML = "NFC not supported on this device.";
         }
 
-        // Update scan status based on the current shift
+        // Update scan status based on NFC tag scan
         async function updateScanStatus(exitName) {
             const dateCell = document.getElementById(`${exitName.replace(/ /g, "")}Date`);
             const locationCell = document.getElementById(`${exitName.replace(/ /g, "")}Location`);
@@ -214,48 +201,45 @@
             const earlyCell = document.getElementById(`${exitName.replace(/ /g, "")}Early`);
             const lateCell = document.getElementById(`${exitName.replace(/ /g, "")}Late`);
 
-            // Get current time to determine the shift
             const now = new Date();
             const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            const formattedDate = now.toLocaleDateString('en-GB'); // Format: DD/MM/YYYY
+            const formattedDate = now.toLocaleDateString('en-GB');
 
             let nightIcon = "🔴";
             let earlyIcon = "🔴";
             let lateIcon = "🔴";
 
             if (currentTime >= "00:00" && currentTime <= "06:00") {
-                nightIcon = "🟢"; // Turn Night icon green
+                nightIcon = "🟢";
             } else if (currentTime >= "06:00" && currentTime <= "14:00") {
-                earlyIcon = "🟢"; // Turn Early icon green
+                earlyIcon = "🟢";
             } else if (currentTime >= "14:00" && currentTime <= "23:59") {
-                lateIcon = "🟢"; // Turn Late icon green
+                lateIcon = "🟢";
             }
 
-            // Update the shift icons in the table
             nightCell.textContent = nightIcon;
             earlyCell.textContent = earlyIcon;
             lateCell.textContent = lateIcon;
             dateCell.textContent = formattedDate;
-            locationCell.textContent = exitName; // Set location to the Fire Exit name
 
             try {
-                const requestData = { fireExit: exitName }; // Update location in Google Sheets as well
+                const requestData = { fireExit: exitName };
                 await fetch(webAppURL, {
                     method: 'POST',
                     body: JSON.stringify(requestData),
                 });
             } catch (error) {
-                console.log("Error updating scan status:", error);
+                console.log("Error updating status:", error);
             }
         }
 
-        // Admin Panel: Reset all scans
+        // Admin panel: reset and delete buttons
         document.getElementById('resetButton').addEventListener('click', async () => {
             try {
-                const resetResponse = await fetch(`${webAppURL}?reset=true`, { method: 'POST' });
-                const resetStatus = await resetResponse.json();
+                const response = await fetch(`${webAppURL}?reset=true`, { method: 'POST' });
+                const result = await response.json();
 
-                if (resetStatus.status === 'success') {
+                if (result.status === 'success') {
                     fireExits.forEach(exit => {
                         const dateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Date`);
                         const locationCell = document.getElementById(`${exit.name.replace(/ /g, "")}Location`);
@@ -264,7 +248,7 @@
                         const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
 
                         dateCell.textContent = "-";
-                        locationCell.textContent = exit.name; // Reset to Fire Exit name
+                        locationCell.textContent = exit.name;
                         nightCell.textContent = "🔴";
                         earlyCell.textContent = "🔴";
                         lateCell.textContent = "🔴";
@@ -276,13 +260,12 @@
             }
         });
 
-        // Admin Panel: Delete all data
         document.getElementById('deleteButton').addEventListener('click', async () => {
             try {
-                const deleteResponse = await fetch(`${webAppURL}?delete=true`, { method: 'POST' });
-                const deleteStatus = await deleteResponse.json();
+                const response = await fetch(`${webAppURL}?delete=true`, { method: 'POST' });
+                const result = await response.json();
 
-                if (deleteStatus.status === 'success') {
+                if (result.status === 'success') {
                     fireExits.forEach(exit => {
                         const dateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Date`);
                         const locationCell = document.getElementById(`${exit.name.replace(/ /g, "")}Location`);
@@ -291,7 +274,7 @@
                         const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
 
                         dateCell.textContent = "-";
-                        locationCell.textContent = exit.name; // Reset to Fire Exit name
+                        locationCell.textContent = exit.name;
                         nightCell.textContent = "🔴";
                         earlyCell.textContent = "🔴";
                         lateCell.textContent = "🔴";
