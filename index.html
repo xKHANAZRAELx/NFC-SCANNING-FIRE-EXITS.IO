@@ -70,7 +70,7 @@
 </head>
 <body>
 
-    <h1>Fire Exit NFC Scanning Status1</h1>
+    <h1>Fire Exit NFC Scanning Status</h1>
 
     <table>
         <thead>
@@ -90,6 +90,7 @@
     <div id="adminPanel">
         <h2>Admin Panel</h2>
         <button id="resetButton">Reset All Scans</button>
+        <button id="deleteButton">Delete All Data</button>
     </div>
 
     <script>
@@ -99,6 +100,12 @@
         }
 
         const webAppURL = "https://script.google.com/macros/s/AKfycbx1hgZ_7Y28aaoWK9R9YIqtuhAXGT2QJ8QU3YsO-a9jgldFQuOKrPkAoLcBfY5J9QPo/exec";  // Replace with your Google Apps Script Web App URL
+
+        // Function to format the date to DD/MM/YYYY HH:mm:ss
+        function formatDate(date) {
+            const options = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            return new Date(date).toLocaleString('en-GB', options);
+        }
 
         // Function to generate table rows for fire exits
         function generateTable() {
@@ -145,7 +152,7 @@
                         statusElement.classList.remove('not-scanned');
                         statusElement.classList.add('scanned');
                         statusElement.textContent = 'Scanned';
-                        timeElement.textContent = data[index][2];
+                        timeElement.textContent = formatDate(data[index][2]);
                     }
                 });
             } catch (error) {
@@ -168,7 +175,7 @@
 
                 statusElement.classList.remove('not-scanned');
                 statusElement.classList.add('scanned');
-                const currentTime = new Date().toLocaleString();
+                const currentTime = formatDate(new Date());
                 statusElement.textContent = 'Scanned';
                 timeElement.textContent = currentTime;
             } catch (error) {
@@ -237,6 +244,28 @@
                 }
             } catch (error) {
                 console.log("Error resetting scans:", error);
+            }
+        });
+
+        // Admin Panel: Delete all data
+        document.getElementById('deleteButton').addEventListener('click', async () => {
+            try {
+                const deleteResponse = await fetch(`${webAppURL}?delete=true`, { method: 'POST' });
+                const deleteStatus = await deleteResponse.json();
+
+                if (deleteStatus.status === 'success') {
+                    fireExits.forEach(exit => {
+                        const statusElement = document.getElementById(`${exit.name.replace(/ /g, "")}Status`);
+                        const timeElement = document.getElementById(`${exit.name.replace(/ /g, "")}Time`);
+                        statusElement.classList.remove('scanned');
+                        statusElement.classList.add('not-scanned');
+                        statusElement.textContent = 'Not Scanned';
+                        timeElement.textContent = '-';
+                    });
+                    alert("All data has been deleted.");
+                }
+            } catch (error) {
+                console.log("Error deleting data:", error);
             }
         });
     </script>
