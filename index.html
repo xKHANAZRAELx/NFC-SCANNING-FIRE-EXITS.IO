@@ -57,7 +57,7 @@
 </head>
 <body>
 
-    <h1>Fire Exit NFC Scanning Status</h1>
+    <h1>Fire Exit NFC Scanning Status1</h1>
 
     <table>
         <thead>
@@ -75,12 +75,6 @@
     </table>
 
     <div id="output">Bring an NFC tag close to scan...</div>
-
-    <div id="adminPanel">
-        <h2>Admin Panel</h2>
-        <button id="resetButton">Reset All Scans</button>
-        <button id="deleteButton">Delete All Data</button>
-    </div>
 
     <script>
         const fireExits = [];
@@ -195,33 +189,6 @@
 
         // Update scan status based on NFC tag scan
         async function updateScanStatus(exitName) {
-            const dateCell = document.getElementById(`${exitName.replace(/ /g, "")}Date`);
-            const locationCell = document.getElementById(`${exitName.replace(/ /g, "")}Location`);
-            const nightCell = document.getElementById(`${exitName.replace(/ /g, "")}Night`);
-            const earlyCell = document.getElementById(`${exitName.replace(/ /g, "")}Early`);
-            const lateCell = document.getElementById(`${exitName.replace(/ /g, "")}Late`);
-
-            const now = new Date();
-            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            const formattedDate = now.toLocaleDateString('en-GB');
-
-            let nightIcon = "🔴";
-            let earlyIcon = "🔴";
-            let lateIcon = "🔴";
-
-            if (currentTime >= "00:00" && currentTime <= "06:00") {
-                nightIcon = "🟢";
-            } else if (currentTime >= "06:00" && currentTime <= "14:00") {
-                earlyIcon = "🟢";
-            } else if (currentTime >= "14:00" && currentTime <= "23:59") {
-                lateIcon = "🟢";
-            }
-
-            nightCell.textContent = nightIcon;
-            earlyCell.textContent = earlyIcon;
-            lateCell.textContent = lateIcon;
-            dateCell.textContent = formattedDate;
-
             try {
                 const requestData = { fireExit: exitName };
                 await fetch(webAppURL, {
@@ -232,59 +199,6 @@
                 console.log("Error updating status:", error);
             }
         }
-
-        // Admin panel: reset and delete buttons
-        document.getElementById('resetButton').addEventListener('click', async () => {
-            try {
-                const response = await fetch(`${webAppURL}?reset=true`, { method: 'POST' });
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    fireExits.forEach(exit => {
-                        const dateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Date`);
-                        const locationCell = document.getElementById(`${exit.name.replace(/ /g, "")}Location`);
-                        const nightCell = document.getElementById(`${exit.name.replace(/ /g, "")}Night`);
-                        const earlyCell = document.getElementById(`${exit.name.replace(/ /g, "")}Early`);
-                        const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
-
-                        dateCell.textContent = "-";
-                        locationCell.textContent = exit.name;
-                        nightCell.textContent = "🔴";
-                        earlyCell.textContent = "🔴";
-                        lateCell.textContent = "🔴";
-                    });
-                    alert("All scans have been reset.");
-                }
-            } catch (error) {
-                console.log("Error resetting scans:", error);
-            }
-        });
-
-        document.getElementById('deleteButton').addEventListener('click', async () => {
-            try {
-                const response = await fetch(`${webAppURL}?delete=true`, { method: 'POST' });
-                const result = await response.json();
-
-                if (result.status === 'success') {
-                    fireExits.forEach(exit => {
-                        const dateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Date`);
-                        const locationCell = document.getElementById(`${exit.name.replace(/ /g, "")}Location`);
-                        const nightCell = document.getElementById(`${exit.name.replace(/ /g, "")}Night`);
-                        const earlyCell = document.getElementById(`${exit.name.replace(/ /g, "")}Early`);
-                        const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
-
-                        dateCell.textContent = "-";
-                        locationCell.textContent = exit.name;
-                        nightCell.textContent = "🔴";
-                        earlyCell.textContent = "🔴";
-                        lateCell.textContent = "🔴";
-                    });
-                    alert("All data has been deleted.");
-                }
-            } catch (error) {
-                console.log("Error deleting data:", error);
-            }
-        });
     </script>
 </body>
 </html>
