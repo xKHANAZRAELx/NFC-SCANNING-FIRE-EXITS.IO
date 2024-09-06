@@ -92,7 +92,32 @@
             fireExits.push({ name: `Fire Exit ${i}` });
         }
 
-        const webAppURL = "https://script.google.com/macros/s/YOUR_GOOGLE_WEB_APP_URL/exec";  // Replace with your Google Apps Script Web App URL
+        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev";  // Replace with your Google Apps Script Web App URL
+
+        // Fetch current data from Google Sheets and update the table on page load
+        async function fetchData() {
+            try {
+                const response = await fetch(webAppURL);
+                const data = await response.json();
+
+                fireExits.forEach((exit, index) => {
+                    const dateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Date`);
+                    const locationCell = document.getElementById(`${exit.name.replace(/ /g, "")}Location`);
+                    const nightCell = document.getElementById(`${exit.name.replace(/ /g, "")}Night`);
+                    const earlyCell = document.getElementById(`${exit.name.replace(/ /g, "")}Early`);
+                    const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
+
+                    // Update table based on the data from Google Sheets
+                    dateCell.textContent = data[index][0];  // Date
+                    locationCell.textContent = data[index][1];  // Location
+                    nightCell.textContent = data[index][2];  // Night icon
+                    earlyCell.textContent = data[index][3];  // Early icon
+                    lateCell.textContent = data[index][4];  // Late icon
+                });
+            } catch (error) {
+                console.log("Error fetching data:", error);
+            }
+        }
 
         // Generate the table rows
         function generateTable() {
@@ -134,8 +159,11 @@
             });
         }
 
-        // Generate the table on page load
-        generateTable();
+        // Generate the table on page load and fetch data from Google Sheets
+        window.addEventListener('load', async () => {
+            generateTable();
+            await fetchData();  // Fetch current data from Google Sheets
+        });
 
         // Automatically start NFC scanning on page load
         if ('NDEFReader' in window) {
