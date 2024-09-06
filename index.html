@@ -3,65 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Scanner with Status</title>
+    <title>Fire Exit NFC Scanning Status</title>
     <style>
-        .area {
-            padding: 10px;
-            margin: 10px;
-            border: 1px solid black;
-            display: inline-block;
-            width: 100px;
-            text-align: center;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
         }
-        .scanned {
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f4f4f4;
+            color: #333;
+            font-size: 18px;
+        }
+        td.status {
+            font-weight: bold;
+        }
+        td.not-scanned {
+            background-color: red;
+            color: white;
+        }
+        td.scanned {
             background-color: green;
             color: white;
         }
-        .not-scanned {
-            background-color: red;
-            color: white;
+        td.time {
+            font-size: 0.9em;
+            color: #666;
+        }
+        #output {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
         }
     </style>
 </head>
 <body>
-    <h1>NFC Tag Scanner</h1>
-    <p>Scan the NFC tag of each area to update its status:</p>
 
-    <div id="areas">
-        <div class="area not-scanned" id="areaA">Area A</div>
-        <div class="area not-scanned" id="areaB">Area B</div>
-        <div class="area not-scanned" id="areaC">Area C</div>
-    </div>
+    <h1>Fire Exit NFC Scanning Status</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Fire Exit</th>
+                <th>Status</th>
+                <th>Last Scanned</th>
+            </tr>
+        </thead>
+        <tbody id="fireExitTable">
+            <!-- Dynamic rows for 100+ exits will be generated here -->
+        </tbody>
+    </table>
 
     <div id="output">Bring an NFC tag close to scan...</div>
 
     <script>
-        const areas = ['Area A', 'Area B', 'Area C'];
+        const fireExits = [];
+        for (let i = 1; i <= 100; i++) {
+            fireExits.push({ name: `Fire Exit ${i}` });
+        }
 
-        // Update the visual status of each area
-        function updateAreaStatus() {
-            areas.forEach(area => {
-                const areaElement = document.getElementById(area.toLowerCase().replace(" ", ""));
-                const status = localStorage.getItem(area);
-                if (status === 'scanned') {
-                    areaElement.classList.remove('not-scanned');
-                    areaElement.classList.add('scanned');
-                } else {
-                    areaElement.classList.remove('scanned');
-                    areaElement.classList.add('not-scanned');
+        // Function to generate table rows for fire exits
+        function generateTable() {
+            const tableBody = document.getElementById("fireExitTable");
+
+            fireExits.forEach(exit => {
+                const row = document.createElement("tr");
+                row.id = exit.name.replace(/ /g, "");
+
+                const nameCell = document.createElement("td");
+                nameCell.textContent = exit.name;
+
+                const statusCell = document.createElement("td");
+                statusCell.classList.add("status", "not-scanned");
+                statusCell.id = `${exit.name.replace(/ /g, "")}Status`;
+                statusCell.textContent = "Not Scanned";
+
+                const timeCell = document.createElement("td");
+                timeCell.classList.add("time");
+                timeCell.id = `${exit.name.replace(/ /g, "")}Time`;
+                timeCell.textContent = "-";
+
+                row.appendChild(nameCell);
+                row.appendChild(statusCell);
+                row.appendChild(timeCell);
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Generate the table on page load
+        generateTable();
+
+        // Load the saved scan statuses from localStorage
+        function loadScanStatus() {
+            fireExits.forEach(exit => {
+                const statusElement = document.getElementById(`${exit.name.replace(/ /g, "")}Status`);
+                const timeElement = document.getElementById(`${exit.name.replace(/ /g, "")}Time`);
+                const scannedStatus = localStorage.getItem(exit.name);
+                const scannedTime = localStorage.getItem(`${exit.name}_time`);
+
+                if (scannedStatus === 'scanned') {
+                    statusElement.classList.remove('not-scanned');
+                    statusElement.classList.add('scanned');
+                    statusElement.textContent = 'Scanned';
+                    timeElement.textContent = scannedTime;
                 }
             });
         }
 
-        // Load initial status from localStorage
-        updateAreaStatus();
+        // Function to update scan status
+        function updateScanStatus(exitName) {
+            const statusElement = document.getElementById(`${exitName.replace(/ /g, "")}Status`);
+            const timeElement = document.getElementById(`${exitName.replace(/ /g, "")}Time`);
+            const currentTime = new Date().toLocaleString();
 
-        // Check if Web NFC is supported in this browser
-        function isWebNFCSupported() {
-            return 'NDEFReader' in window;
+            // Update to scanned status
+            statusElement.classList.remove('not-scanned');
+            statusElement.classList.add('scanned');
+            statusElement.textContent = 'Scanned';
+            timeElement.textContent = currentTime;
+
+            // Save to localStorage
+            localStorage.setItem(exitName, 'scanned');
+            localStorage.setItem(`${exitName}_time`, currentTime);
         }
 
-        if (isWebNFCSupported()) {
+        // Load scan status when the page loads
+        loadScanStatus();
+
+        // Automatically start NFC scanning on page load
+        if ('NDEFReader' in window) {
             const output = document.getElementById('output');
 
             async function startNFCScan() {
@@ -70,27 +157,23 @@
                     await ndef.scan();
 
                     ndef.onreading = (event) => {
-                        // Extract NFC tag data as text
                         const record = event.message.records[0];
                         let tagText = '';
 
-                        // Handle text-type NFC tags (most common)
+                        // Decode the NFC tag data as text
                         if (record.recordType === "text") {
                             const textDecoder = new TextDecoder(record.encoding);
                             tagText = textDecoder.decode(record.data);
                         }
 
-                        // Log the scanned tag and show it on the output
+                        // Log the scanned tag
                         output.innerHTML = `Tag Scanned: ${tagText}`;
 
-                        // Check if the scanned text matches any area
-                        if (areas.includes(tagText.trim())) {
-                            // Store scan status in localStorage
-                            localStorage.setItem(tagText.trim(), 'scanned');
-                            // Update the UI
-                            updateAreaStatus();
+                        // Update the scan status for the corresponding fire exit
+                        if (fireExits.some(exit => exit.name === tagText)) {
+                            updateScanStatus(tagText);
                         } else {
-                            output.innerHTML = `Unknown area scanned: ${tagText}`;
+                            output.innerHTML = `Unknown fire exit scanned: ${tagText}`;
                         }
                     };
                 } catch (error) {
@@ -98,11 +181,9 @@
                 }
             }
 
-            // Start scanning automatically
             window.addEventListener('load', startNFCScan);
         } else {
-            const output = document.getElementById('output');
-            output.innerHTML = "NFC not supported in this browser. Try using Samsung Internet or enable NFC in Chrome flags.";
+            document.getElementById('output').innerHTML = "NFC not supported on this device.";
         }
     </script>
 </body>
