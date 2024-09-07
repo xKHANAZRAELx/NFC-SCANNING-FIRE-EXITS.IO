@@ -69,7 +69,7 @@
             fireExits.push({ name: `Fire Exit ${i}` });
         }
 
-        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev"; // Your Google Apps Script URL
+        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev"; // Replace with your Google Apps Script URL
 
         // Handle NFC scanning
         if ('NDEFReader' in window) {
@@ -108,11 +108,20 @@
         async function updateScanStatus(exitName) {
             try {
                 const requestData = { fireExit: exitName };
-                await fetch(webAppURL, {
+                const response = await fetch(webAppURL, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',  // Ensure JSON content
+                    },
                     body: JSON.stringify(requestData),
                 });
-                output.innerHTML = `${exitName} has been updated in Google Sheets.`;
+
+                if (response.ok) {
+                    const result = await response.json();
+                    output.innerHTML = `${exitName} has been updated in Google Sheets.`;
+                } else {
+                    throw new Error('Failed to update status');
+                }
             } catch (error) {
                 output.innerHTML = `Error updating status: ${error.message}`;
             }
