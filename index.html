@@ -40,33 +40,20 @@
             margin-top: 20px;
             color: #333;
         }
-        #adminPanel {
-            text-align: center;
-            margin-top: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #333;
-            color: white;
-            border: none;
-        }
-        button:hover {
-            background-color: #555;
-        }
     </style>
 </head>
 <body>
 
-    <h1>Fire Exit NFC Scanning Status1</h1>
+    <h1>Fire Exit NFC Scanning Status</h1>
 
     <table>
         <thead>
             <tr>
                 <th>Date</th>
                 <th>Location</th>
-                <th>Night</th>
-                <th>Early</th>
-                <th>Late</th>
+                <th>Night Icon</th>
+                <th>Early Icon</th>
+                <th>Late Icon</th>
             </tr>
         </thead>
         <tbody id="fireExitTable">
@@ -82,79 +69,7 @@
             fireExits.push({ name: `Fire Exit ${i}` });
         }
 
-        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev"; // Your web app URL
-
-        // Fetch data from Google Sheets
-        async function fetchData() {
-            try {
-                const response = await fetch(webAppURL);
-                const data = await response.json();
-
-                fireExits.forEach((exit, index) => {
-                    const dateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Date`);
-                    const locationCell = document.getElementById(`${exit.name.replace(/ /g, "")}Location`);
-                    const nightCell = document.getElementById(`${exit.name.replace(/ /g, "")}Night`);
-                    const earlyCell = document.getElementById(`${exit.name.replace(/ /g, "")}Early`);
-                    const lateCell = document.getElementById(`${exit.name.replace(/ /g, "")}Late`);
-
-                    if (data[index]) {
-                        dateCell.textContent = data[index][0];
-                        locationCell.textContent = data[index][1];
-                        nightCell.textContent = data[index][2];
-                        earlyCell.textContent = data[index][3];
-                        lateCell.textContent = data[index][4];
-                    }
-                });
-            } catch (error) {
-                console.log("Error fetching data:", error);
-            }
-        }
-
-        // Generate table rows dynamically
-        function generateTable() {
-            const tableBody = document.getElementById("fireExitTable");
-
-            fireExits.forEach(exit => {
-                const row = document.createElement("tr");
-                row.id = exit.name.replace(/ /g, "");
-
-                const dateCell = document.createElement("td");
-                dateCell.id = `${exit.name.replace(/ /g, "")}Date`;
-                dateCell.textContent = "-";
-
-                const locationCell = document.createElement("td");
-                locationCell.id = `${exit.name.replace(/ /g, "")}Location`;
-                locationCell.textContent = exit.name;
-
-                const nightCell = document.createElement("td");
-                nightCell.id = `${exit.name.replace(/ /g, "")}Night`;
-                nightCell.classList.add("icon");
-                nightCell.textContent = "🔴";
-
-                const earlyCell = document.createElement("td");
-                earlyCell.id = `${exit.name.replace(/ /g, "")}Early`;
-                earlyCell.classList.add("icon");
-                earlyCell.textContent = "🔴";
-
-                const lateCell = document.createElement("td");
-                lateCell.id = `${exit.name.replace(/ /g, "")}Late`;
-                lateCell.classList.add("icon");
-                lateCell.textContent = "🔴";
-
-                row.appendChild(dateCell);
-                row.appendChild(locationCell);
-                row.appendChild(nightCell);
-                row.appendChild(earlyCell);
-                row.appendChild(lateCell);
-                tableBody.appendChild(row);
-            });
-        }
-
-        // Fetch data on page load
-        window.addEventListener('load', async () => {
-            generateTable();
-            await fetchData();
-        });
+        const webAppURL = "https://script.google.com/macros/s/AKfycbylB32iERt_wr5_kxxDpzIG4FsXGLgrxngR6NkF5Uc/dev"; // Your Google Apps Script URL
 
         // Handle NFC scanning
         if ('NDEFReader' in window) {
@@ -175,6 +90,8 @@
                         }
 
                         output.innerHTML = `Tag Scanned: ${tagText}`;
+
+                        // Call function to update the scan status and post it to Google Sheets
                         updateScanStatus(tagText);
                     };
                 } catch (error) {
@@ -187,7 +104,7 @@
             document.getElementById('output').innerHTML = "NFC not supported on this device.";
         }
 
-        // Update scan status based on NFC tag scan
+        // Update scan status and send the data to Google Sheets
         async function updateScanStatus(exitName) {
             try {
                 const requestData = { fireExit: exitName };
@@ -195,8 +112,9 @@
                     method: 'POST',
                     body: JSON.stringify(requestData),
                 });
+                output.innerHTML = `${exitName} has been updated in Google Sheets.`;
             } catch (error) {
-                console.log("Error updating status:", error);
+                output.innerHTML = `Error updating status: ${error.message}`;
             }
         }
     </script>
