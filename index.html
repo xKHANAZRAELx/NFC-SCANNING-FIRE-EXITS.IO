@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC Tag Scanner with Google Sheets</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        .icon {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>NFC Tag Scanner with Google Sheets</h1>
+    
+    <div id="output">Waiting for NFC tag...</div>
+
+    <script type="text/javascript">
+        // Google Apps Script Web App URL (replace with your actual URL)
+        const scriptURL = "https://script.google.com/macros/s/AKfycbyhjV2RXRTZyQet0fnE33_NHvLIA7_aLAfsPbE776l36N4Hr5kguXOVPFMq-rspokvYRQ/exec"; // Replace with your Web App URL
+
+        // Function to send NFC scan data to Google Sheets
+        async function saveScanToGoogleSheets(location, timeOfDay) {
+            const data = {
+                location: location,
+                night: timeOfDay === 'night' ? 'X' : '',
+                early: timeOfDay === 'early' ? 'X' : '',
+                late: timeOfDay === 'late' ? 'X' : ''
+            };
+
+            // Send the data via POST request
+            const response = await fetch(scriptURL, {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            console.log(result);
+        }
+
+        // Function to handle NFC scanning and sending data
+        async function handleNFCScan() {
+            if ('NDEFReader' in window) {
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+                    document.getElementById('output').textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
+
+                    ndef.onreading = event => {
+                        const { message } = event;
+                        let messageText = '';
+
+                        // Process NFC tag message
+                        for (const record of message.records) {
+                            if (record.recordType === 'text') {
+                                const textDecoder = new TextDecoder(record.encoding);
+                                messageText = textDecoder.decode(record.data);
+                            }
+                        }
+
+                        // Log scanned NFC tag
+                        document.getElementById('output').textContent = `NFC Tag scanned: ${messageText}`;
+
+                        // Determine the time of day (Night, Early, Late)
+                        const now = new Date();
+                        const hours = now.getHours();
+                        let timeOfDay = '';
+                        if (hours >= 0 && hours < 6) {
+                            timeOfDay = 'night';
+                        } else if (hours >= 6 && hours < 12) {
+                            timeOfDay = 'early';
+                        } else {
+                            timeOfDay = 'late';
+                        }
+
+                        // Save the NFC scan to Google Sheets
+                        saveScanToGoogleSheets(messageText, timeOfDay);
+                    };
+
+                    ndef.onreadingerror = () => {
+                        document.getElementById('output').textContent = 'Failed to read the NFC tag. Try again.';
+                    };
+                } catch (error) {
+                    document.getElementById('output').textContent = `Error: ${error.message}`;
+                }
+            } else {
+                document.getElementById('output').textContent = 'Web NFC is not supported on this device.';
+            }
+        }
+
+        // Start NFC scanning when the page loads
+        window.addEventListener('load', handleNFCScan);
+    </script>
+
+</body>
+</html>
