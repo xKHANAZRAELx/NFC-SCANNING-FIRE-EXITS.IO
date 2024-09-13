@@ -3,30 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Scanner with Firestore</title>
+    <title>NFC Scanning Status</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
         }
-        #output {
-            margin-top: 20px;
-            font-size: 18px;
+        #status {
+            font-size: 1.5rem;
+            color: #333;
         }
     </style>
 </head>
 <body>
-
-    <h1>NFC Tag Scanner with Firestore</h1>
-    <div id="output">Waiting for NFC tag...</div>
+    <div id="status">NFC Scan Status: Waiting for scan...</div>
 
     <script type="module">
-        // Import Firebase SDK and Firestore
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        // Firebase configuration (your provided config)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
-        // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDj2uosWcsHdGWm31_w_5LJ-i34IGZY_us",
             authDomain: "nfc-scan-tracker.firebaseapp.com",
@@ -40,70 +42,39 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-        // Initialize Firestore
-        const db = getFirestore(app);
+        // NFC scanning logic
+        const statusElement = document.getElementById('status');
 
-        // Function to save NFC scan data to Firestore
-        async function saveScanToFirestore(location, timeOfDay, date) {
-            try {
-                const docRef = await addDoc(collection(db, "scans"), {
-                    location: location,
-                    timeOfDay: timeOfDay,
-                    date: date
-                });
-                console.log("Document written with ID: ", docRef.id);
-            } catch (e) {
-                console.error("Error adding document: ", e);
-            }
+        if ('NDEFReader' in window) {
+            const reader = new NDEFReader();
+            reader.scan().then(() => {
+                statusElement.textContent = "NFC scan started. Please scan a tag.";
+
+                reader.onreading = (event) => {
+                    const message = event.message;
+                    const record = message.records[0];
+
+                    const decoder = new TextDecoder();
+                    const nfcData = decoder.decode(record.data);
+
+                    // Write data to Firebase
+                    set(ref(database, 'nfcScans/' + Date.now()), {
+                        data: nfcData,
+                        timestamp: Date.now()
+                    }).then(() => {
+                        statusElement.textContent = "Data written to Firebase: " + nfcData;
+                    }).catch((error) => {
+                        statusElement.textContent = "Error writing to Firebase: " + error.message;
+                    });
+                };
+            }).catch(error => {
+                statusElement.textContent = "NFC scan failed: " + error.message;
+            });
+        } else {
+            statusElement.textContent = "NFC is not supported by this browser.";
         }
-
-        // Function to detect NFC scan and save data to Firestore
-        async function handleNFCScan() {
-            if ('NDEFReader' in window) {
-                try {
-                    const ndef = new NDEFReader();
-                    await ndef.scan();
-                    document.getElementById('output').textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
-
-                    ndef.onreading = event => {
-                        const { serialNumber, message } = event;
-                        let messageText = '';
-
-                        // Process NFC tag message
-                        for (const record of message.records) {
-                            if (record.recordType === 'text') {
-                                const textDecoder = new TextDecoder(record.encoding);
-                                messageText = textDecoder.decode(record.data);
-                            }
-                        }
-
-                        // Log scanned NFC tag
-                        document.getElementById('output').textContent = `NFC Tag scanned: ${messageText}`;
-
-                        // Get the current time and date
-                        const now = new Date();
-                        const currentDate = now.toLocaleString();
-                        const timeOfDay = now.getHours() < 12 ? 'morning' : 'afternoon';
-
-                        // Save the NFC scan to Firestore
-                        saveScanToFirestore(messageText, timeOfDay, currentDate);
-                    };
-
-                    ndef.onreadingerror = () => {
-                        document.getElementById('output').textContent = 'Failed to read the NFC tag. Try again.';
-                    };
-                } catch (error) {
-                    document.getElementById('output').textContent = `Error: ${error.message}`;
-                }
-            } else {
-                document.getElementById('output').textContent = 'Web NFC is not supported on this device.';
-            }
-        }
-
-        // Start NFC scanning when the page loads
-        window.addEventListener('load', handleNFCScan);
     </script>
-
 </body>
 </html>
