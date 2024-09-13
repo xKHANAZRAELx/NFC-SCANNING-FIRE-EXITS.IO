@@ -3,175 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Scanner with Daily Reset</title>
+    <title>NFC Tag Scanner with Firestore</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             margin-top: 50px;
         }
-        table {
-            width: 80%;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-        }
-        .icon {
-            width: 20px;
-            height: 20px;
-            background-color: red;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        button {
+        #output {
             margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
 
-    <h1>NFC Tag Scanner with Daily Reset</h1>
-    
-    <!-- Table for Date, Location, Night, Early, Late -->
-    <table>
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Location</th>
-                <th>Night</th>
-                <th>Early</th>
-                <th>Late</th>
-            </tr>
-        </thead>
-        <tbody id="table-body">
-            <tr data-location="A">
-                <td id="dateA"></td>
-                <td>A</td>
-                <td><div class="icon" id="nightA"></div></td>
-                <td><div class="icon" id="earlyA"></div></td>
-                <td><div class="icon" id="lateA"></div></td>
-            </tr>
-            <tr data-location="B">
-                <td id="dateB"></td>
-                <td>B</td>
-                <td><div class="icon" id="nightB"></div></td>
-                <td><div class="icon" id="earlyB"></div></td>
-                <td><div class="icon" id="lateB"></div></td>
-            </tr>
-        </tbody>
-    </table>
-
+    <h1>NFC Tag Scanner with Firestore</h1>
     <div id="output">Waiting for NFC tag...</div>
 
-    <!-- Reset Button -->
-    <button id="reset-btn">Reset Table</button>
+    <script type="module">
+        // Import Firebase SDK and Firestore
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-    <script>
-        const output = document.getElementById('output');
-        const resetBtn = document.getElementById('reset-btn');
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDj2uosWcsHdGWm31_w_5LJ-i34IGZY_us",
+            authDomain: "nfc-scan-tracker.firebaseapp.com",
+            databaseURL: "https://nfc-scan-tracker-default-rtdb.firebaseio.com",
+            projectId: "nfc-scan-tracker",
+            storageBucket: "nfc-scan-tracker.appspot.com",
+            messagingSenderId: "565206205474",
+            appId: "1:565206205474:web:5959b2c68c0415a082b67b",
+            measurementId: "G-TWLF5S7T40"
+        };
 
-        // Get today's date as a string (formatted as YYYY-MM-DD)
-        function getTodayDate() {
-            const today = new Date();
-            return today.toISOString().split('T')[0];  // Extract YYYY-MM-DD format
-        }
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
 
-        // Function to change the color of an icon based on the time of day
-        function changeIconColor(location, timeOfDay) {
-            const icon = document.getElementById(timeOfDay + location);
-            if (icon) {
-                icon.style.backgroundColor = 'green';
+        // Initialize Firestore
+        const db = getFirestore(app);
+
+        // Function to save NFC scan data to Firestore
+        async function saveScanToFirestore(location, timeOfDay, date) {
+            try {
+                const docRef = await addDoc(collection(db, "scans"), {
+                    location: location,
+                    timeOfDay: timeOfDay,
+                    date: date
+                });
+                console.log("Document written with ID: ", docRef.id);
+            } catch (e) {
+                console.error("Error adding document: ", e);
             }
         }
 
-        // Save the table state (date and icon colors) to localStorage
-        function saveTableState() {
-            const tableState = {
-                dateA: document.getElementById("dateA").textContent,
-                dateB: document.getElementById("dateB").textContent,
-                nightA: document.getElementById("nightA").style.backgroundColor,
-                earlyA: document.getElementById("earlyA").style.backgroundColor,
-                lateA: document.getElementById("lateA").style.backgroundColor,
-                nightB: document.getElementById("nightB").style.backgroundColor,
-                earlyB: document.getElementById("earlyB").style.backgroundColor,
-                lateB: document.getElementById("lateB").style.backgroundColor,
-                lastReset: getTodayDate()  // Save the current date
-            };
-            localStorage.setItem("tableState", JSON.stringify(tableState));
-        }
-
-        // Load the table state from localStorage
-        function loadTableState() {
-            const tableState = JSON.parse(localStorage.getItem("tableState"));
-            if (tableState) {
-                document.getElementById("dateA").textContent = tableState.dateA || '';
-                document.getElementById("dateB").textContent = tableState.dateB || '';
-                document.getElementById("nightA").style.backgroundColor = tableState.nightA || 'red';
-                document.getElementById("earlyA").style.backgroundColor = tableState.earlyA || 'red';
-                document.getElementById("lateA").style.backgroundColor = tableState.lateA || 'red';
-                document.getElementById("nightB").style.backgroundColor = tableState.nightB || 'red';
-                document.getElementById("earlyB").style.backgroundColor = tableState.earlyB || 'red';
-                document.getElementById("lateB").style.backgroundColor = tableState.lateB || 'red';
-            }
-        }
-
-        // Check if today is different from the last reset date
-        function shouldResetTable() {
-            const tableState = JSON.parse(localStorage.getItem("tableState"));
-            if (!tableState || tableState.lastReset !== getTodayDate()) {
-                return true;  // Should reset if no data exists or the last reset was on a different day
-            }
-            return false;
-        }
-
-        // Automatically reset the table if it's a new day
-        function resetTableIfNewDay() {
-            if (shouldResetTable()) {
-                resetTable();  // Reset the table if it's a new day
-            }
-        }
-
-        // Determine the time of day (Night, Early, Late)
-        function getTimeOfDay() {
-            const now = new Date();
-            const hours = now.getHours();
-
-            if (hours >= 0 && hours < 6) {
-                return "night";
-            } else if (hours >= 6 && hours < 12) {
-                return "early";
-            } else {
-                return "late";
-            }
-        }
-
-        // Automatically start NFC scan when the page loads
-        window.addEventListener('load', async () => {
-            // Automatically reset the table if it's a new day
-            resetTableIfNewDay();
-
-            // Load the previous table state from localStorage
-            loadTableState();
-
+        // Function to detect NFC scan and save data to Firestore
+        async function handleNFCScan() {
             if ('NDEFReader' in window) {
                 try {
                     const ndef = new NDEFReader();
                     await ndef.scan();
-                    output.textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
+                    document.getElementById('output').textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
 
-                    ndef.onreading = async event => {
-                        const { message } = event;
+                    ndef.onreading = event => {
+                        const { serialNumber, message } = event;
                         let messageText = '';
 
-                        // Process the NFC tag message
+                        // Process NFC tag message
                         for (const record of message.records) {
                             if (record.recordType === 'text') {
                                 const textDecoder = new TextDecoder(record.encoding);
@@ -179,57 +78,31 @@
                             }
                         }
 
-                        // Display the scanned data
-                        output.textContent = `NFC Tag scanned! Message: ${messageText}`;
+                        // Log scanned NFC tag
+                        document.getElementById('output').textContent = `NFC Tag scanned: ${messageText}`;
 
-                        // Get the current date and time
+                        // Get the current time and date
                         const now = new Date();
                         const currentDate = now.toLocaleString();
-                        const timeOfDay = getTimeOfDay(); // Get time of day (Night, Early, Late)
+                        const timeOfDay = now.getHours() < 12 ? 'morning' : 'afternoon';
 
-                        // Update the table based on the NFC tag scanned (A or B)
-                        if (messageText === "A") {
-                            document.getElementById("dateA").textContent = currentDate;
-                            changeIconColor("A", timeOfDay); // Only change the icon for the current time of day
-                        } else if (messageText === "B") {
-                            document.getElementById("dateB").textContent = currentDate;
-                            changeIconColor("B", timeOfDay); // Only change the icon for the current time of day
-                        }
-
-                        // Save the updated table state to localStorage
-                        saveTableState();
+                        // Save the NFC scan to Firestore
+                        saveScanToFirestore(messageText, timeOfDay, currentDate);
                     };
 
                     ndef.onreadingerror = () => {
-                        output.textContent = 'Failed to read the NFC tag. Try again.';
+                        document.getElementById('output').textContent = 'Failed to read the NFC tag. Try again.';
                     };
                 } catch (error) {
-                    output.textContent = `Error: ${error.message}`;
+                    document.getElementById('output').textContent = `Error: ${error.message}`;
                 }
             } else {
-                output.textContent = 'Web NFC is not supported on this device.';
+                document.getElementById('output').textContent = 'Web NFC is not supported on this device.';
             }
-        });
-
-        // Reset the table
-        function resetTable() {
-            const icons = document.querySelectorAll('.icon');
-            icons.forEach(icon => {
-                icon.style.backgroundColor = 'red';
-            });
-
-            // Clear dates
-            document.getElementById("dateA").textContent = '';
-            document.getElementById("dateB").textContent = '';
-
-            // Save the reset state (with today's date)
-            saveTableState();
         }
 
-        // Manual reset button logic
-        resetBtn.addEventListener('click', () => {
-            resetTable();
-        });
+        // Start NFC scanning when the page loads
+        window.addEventListener('load', handleNFCScan);
     </script>
 
 </body>
