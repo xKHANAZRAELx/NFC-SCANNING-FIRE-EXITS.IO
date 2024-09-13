@@ -22,14 +22,14 @@
 </head>
 <body>
 
-    <h1>NFC Scanning Status2</h1>
+    <h1>NFC Scanning Status</h1>
 
     <div id="output">Bring an NFC tag close to scan...</div>
 
     <script>
         const webAppURL = "https://script.google.com/macros/s/AKfycbwfS5WC_R1U_bYdrl9qed58ntBEecJz_XET5TEV53E/dev";  // Your Google Apps Script URL
 
-        // Handle NFC scanning
+        // Automatically start NFC scanning when the page loads
         if ('NDEFReader' in window) {
             const output = document.getElementById('output');
 
