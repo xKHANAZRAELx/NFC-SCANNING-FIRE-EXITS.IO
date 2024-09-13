@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Scanner with Persistent Table</title>
+    <title>NFC Tag Scanner with Daily Reset</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,7 +38,7 @@
 </head>
 <body>
 
-    <h1>NFC Tag Scanner with Persistent Table</h1>
+    <h1>NFC Tag Scanner with Daily Reset</h1>
     
     <!-- Table for Date, Location, Night, Early, Late -->
     <table>
@@ -78,6 +78,12 @@
         const output = document.getElementById('output');
         const resetBtn = document.getElementById('reset-btn');
 
+        // Get today's date as a string (formatted as YYYY-MM-DD)
+        function getTodayDate() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];  // Extract YYYY-MM-DD format
+        }
+
         // Function to change the color of an icon based on the time of day
         function changeIconColor(location, timeOfDay) {
             const icon = document.getElementById(timeOfDay + location);
@@ -97,6 +103,7 @@
                 nightB: document.getElementById("nightB").style.backgroundColor,
                 earlyB: document.getElementById("earlyB").style.backgroundColor,
                 lateB: document.getElementById("lateB").style.backgroundColor,
+                lastReset: getTodayDate()  // Save the current date
             };
             localStorage.setItem("tableState", JSON.stringify(tableState));
         }
@@ -116,6 +123,22 @@
             }
         }
 
+        // Check if today is different from the last reset date
+        function shouldResetTable() {
+            const tableState = JSON.parse(localStorage.getItem("tableState"));
+            if (!tableState || tableState.lastReset !== getTodayDate()) {
+                return true;  // Should reset if no data exists or the last reset was on a different day
+            }
+            return false;
+        }
+
+        // Automatically reset the table if it's a new day
+        function resetTableIfNewDay() {
+            if (shouldResetTable()) {
+                resetTable();  // Reset the table if it's a new day
+            }
+        }
+
         // Determine the time of day (Night, Early, Late)
         function getTimeOfDay() {
             const now = new Date();
@@ -132,6 +155,9 @@
 
         // Automatically start NFC scan when the page loads
         window.addEventListener('load', async () => {
+            // Automatically reset the table if it's a new day
+            resetTableIfNewDay();
+
             // Load the previous table state from localStorage
             loadTableState();
 
@@ -185,8 +211,8 @@
             }
         });
 
-        // Reset button logic to reset all icons to red and clear dates
-        resetBtn.addEventListener('click', () => {
+        // Reset the table
+        function resetTable() {
             const icons = document.querySelectorAll('.icon');
             icons.forEach(icon => {
                 icon.style.backgroundColor = 'red';
@@ -196,8 +222,13 @@
             document.getElementById("dateA").textContent = '';
             document.getElementById("dateB").textContent = '';
 
-            // Clear localStorage data
-            localStorage.removeItem("tableState");
+            // Save the reset state (with today's date)
+            saveTableState();
+        }
+
+        // Manual reset button logic
+        resetBtn.addEventListener('click', () => {
+            resetTable();
         });
     </script>
 
