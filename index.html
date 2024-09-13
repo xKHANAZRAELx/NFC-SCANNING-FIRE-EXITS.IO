@@ -10,30 +10,6 @@
             text-align: center;
             margin-top: 50px;
         }
-        table {
-            width: 80%;
-            margin: 20px auto;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-        }
-        .icon {
-            width: 20px;
-            height: 20px;
-            background-color: red;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-        }
         #output {
             margin-top: 20px;
             font-size: 18px;
@@ -43,12 +19,11 @@
 <body>
 
     <h1>NFC Tag Scanner with Google Sheets</h1>
-    
     <div id="output">Waiting for NFC tag...</div>
 
     <script type="text/javascript">
         // Google Apps Script Web App URL (replace with your actual URL)
-        const scriptURL = "https://script.google.com/macros/s/AKfycbyhjV2RXRTZyQet0fnE33_NHvLIA7_aLAfsPbE776l36N4Hr5kguXOVPFMq-rspokvYRQ/exec"; // Replace with your Web App URL
+        const scriptURL = "https://script.google.com/macros/s/AKfycbyhjV2RXRTZyQet0fnE33_NHvLIA7_aLAfsPbE776l36N4Hr5kguXOVPFMq-rspokvYRQ/exec"; // Your Web App URL
 
         // Function to send NFC scan data to Google Sheets
         async function saveScanToGoogleSheets(location, timeOfDay) {
