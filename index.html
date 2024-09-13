@@ -35,6 +35,9 @@
         const scanButton = document.getElementById('scanButton');
         const output = document.getElementById('output');
 
+        // URL of the Google Apps Script Web App
+        const scriptURL = "https://script.google.com/macros/s/AKfycbwfS5WC_R1U_bYdrl9qed58ntBEecJz_XET5TEV53E/dev"; // Replace with your Apps Script URL
+
         // Check if NFC is supported
         if ('NDEFReader' in window) {
             scanButton.addEventListener('click', async () => {
@@ -43,18 +46,36 @@
                     await ndef.scan();
                     output.textContent = 'Scan started, bring the NFC tag close to your device.';
 
-                    ndef.onreading = event => {
+                    ndef.onreading = async event => {
                         const { serialNumber, message } = event;
                         output.textContent = `NFC Tag scanned! Serial Number: ${serialNumber}`;
 
                         // Process the message (if needed)
+                        let messageText = '';
                         for (const record of message.records) {
                             if (record.recordType === 'text') {
                                 const textDecoder = new TextDecoder(record.encoding);
-                                const messageText = textDecoder.decode(record.data);
+                                messageText = textDecoder.decode(record.data);
                                 output.textContent += `\nMessage: ${messageText}`;
                             }
                         }
+
+                        // Prepare the data to send to Google Sheets
+                        const data = {
+                            serialNumber: serialNumber,
+                            message: messageText
+                        };
+
+                        // Send the data to Google Apps Script via POST request
+                        await fetch(scriptURL, {
+                            method: 'POST',
+                            body: JSON.stringify(data),
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        output.textContent += '\nData sent to Google Sheets!';
                     };
 
                     ndef.onreadingerror = () => {
