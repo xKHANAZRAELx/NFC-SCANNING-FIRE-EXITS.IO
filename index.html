@@ -10,6 +10,14 @@
             text-align: center;
             margin-top: 50px;
         }
+        #status {
+            width: 100px;
+            height: 100px;
+            background-color: red;
+            border-radius: 50%;
+            display: inline-block;
+            margin-top: 20px;
+        }
         #output {
             margin-top: 20px;
             font-size: 18px;
@@ -19,13 +27,12 @@
 <body>
 
     <h1>NFC Tag Scanner</h1>
+    <div id="status"></div>
     <div id="output">Waiting for NFC tag...</div>
 
     <script>
+        const statusIcon = document.getElementById('status');
         const output = document.getElementById('output');
-
-        // Google Apps Script Web App URL (replace with your actual URL)
-        const scriptURL = "https://script.google.com/macros/s/AKfycbwfS5WC_R1U_bYdrl9qed58ntBEecJz_XET5TEV53E/dev"; // Replace this with your actual Web App URL
 
         // Automatically start NFC scan when the page loads
         window.addEventListener('load', async () => {
@@ -47,31 +54,11 @@
                             }
                         }
 
+                        // Change the icon from red to green
+                        statusIcon.style.backgroundColor = 'green';
+                        
                         // Display the scanned data
                         output.textContent = `NFC Tag scanned! Serial Number: ${serialNumber}, Message: ${messageText}`;
-
-                        // Prepare the data to send to Google Sheets
-                        const data = {
-                            serialNumber: serialNumber,
-                            message: messageText || 'No message'
-                        };
-
-                        // Send the data to Google Apps Script via POST request
-                        const response = await fetch(scriptURL, {
-                            method: 'POST',
-                            body: JSON.stringify(data), // Send JSON data in the body
-                            headers: {
-                                'Content-Type': 'application/json' // Set content type to JSON
-                            }
-                        });
-
-                        // Display the response from the server
-                        const result = await response.json();
-                        if (result.status === 'success') {
-                            output.textContent += '\nData successfully sent to Google Sheets!';
-                        } else {
-                            output.textContent += `\nFailed to send data: ${result.message}`;
-                        }
                     };
 
                     ndef.onreadingerror = () => {
