@@ -22,12 +22,12 @@
 </head>
 <body>
 
-    <h1>NFC Scanning Status</h1>
+    <h1>NFC Scanning Status2</h1>
 
     <div id="output">Bring an NFC tag close to scan...</div>
 
     <script>
-        const webAppURL = "YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE";  // Replace with your Google Apps Script URL
+        const webAppURL = "https://script.google.com/macros/s/AKfycbwfS5WC_R1U_bYdrl9qed58ntBEecJz_XET5TEV53E/dev";  // Your Google Apps Script URL
 
         // Handle NFC scanning
         if ('NDEFReader' in window) {
@@ -53,7 +53,11 @@
                         updateScanStatus(tagText);
                     };
                 } catch (error) {
-                    output.innerHTML = `NFC scan failed: ${error.message}`;
+                    if (error.message.includes('declined')) {
+                        output.innerHTML = "NFC permission declined. Please enable NFC permissions for the browser.";
+                    } else {
+                        output.innerHTML = `NFC scan failed: ${error.message}`;
+                    }
                 }
             }
 
@@ -75,6 +79,7 @@
                 });
 
                 if (response.ok) {
+                    const result = await response.json();
                     output.innerHTML = `${location} has been updated in Google Sheets.`;
                 } else {
                     throw new Error('Failed to update status');
