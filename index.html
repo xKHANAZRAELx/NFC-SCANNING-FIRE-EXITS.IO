@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Scanner with Table</title>
+    <title>NFC Tag Scanner with Persistent Table</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,7 +38,7 @@
 </head>
 <body>
 
-    <h1>NFC Tag Scanner with Table</h1>
+    <h1>NFC Tag Scanner with Persistent Table</h1>
     
     <!-- Table for Date, Location, Night, Early, Late -->
     <table>
@@ -86,6 +86,36 @@
             }
         }
 
+        // Save the table state (date and icon colors) to localStorage
+        function saveTableState() {
+            const tableState = {
+                dateA: document.getElementById("dateA").textContent,
+                dateB: document.getElementById("dateB").textContent,
+                nightA: document.getElementById("nightA").style.backgroundColor,
+                earlyA: document.getElementById("earlyA").style.backgroundColor,
+                lateA: document.getElementById("lateA").style.backgroundColor,
+                nightB: document.getElementById("nightB").style.backgroundColor,
+                earlyB: document.getElementById("earlyB").style.backgroundColor,
+                lateB: document.getElementById("lateB").style.backgroundColor,
+            };
+            localStorage.setItem("tableState", JSON.stringify(tableState));
+        }
+
+        // Load the table state from localStorage
+        function loadTableState() {
+            const tableState = JSON.parse(localStorage.getItem("tableState"));
+            if (tableState) {
+                document.getElementById("dateA").textContent = tableState.dateA || '';
+                document.getElementById("dateB").textContent = tableState.dateB || '';
+                document.getElementById("nightA").style.backgroundColor = tableState.nightA || 'red';
+                document.getElementById("earlyA").style.backgroundColor = tableState.earlyA || 'red';
+                document.getElementById("lateA").style.backgroundColor = tableState.lateA || 'red';
+                document.getElementById("nightB").style.backgroundColor = tableState.nightB || 'red';
+                document.getElementById("earlyB").style.backgroundColor = tableState.earlyB || 'red';
+                document.getElementById("lateB").style.backgroundColor = tableState.lateB || 'red';
+            }
+        }
+
         // Determine the time of day (Night, Early, Late)
         function getTimeOfDay() {
             const now = new Date();
@@ -102,6 +132,9 @@
 
         // Automatically start NFC scan when the page loads
         window.addEventListener('load', async () => {
+            // Load the previous table state from localStorage
+            loadTableState();
+
             if ('NDEFReader' in window) {
                 try {
                     const ndef = new NDEFReader();
@@ -109,7 +142,7 @@
                     output.textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
 
                     ndef.onreading = async event => {
-                        const { serialNumber, message } = event;
+                        const { message } = event;
                         let messageText = '';
 
                         // Process the NFC tag message
@@ -121,7 +154,7 @@
                         }
 
                         // Display the scanned data
-                        output.textContent = `NFC Tag scanned! Serial Number: ${serialNumber}, Message: ${messageText}`;
+                        output.textContent = `NFC Tag scanned! Message: ${messageText}`;
 
                         // Get the current date and time
                         const now = new Date();
@@ -135,9 +168,10 @@
                         } else if (messageText === "B") {
                             document.getElementById("dateB").textContent = currentDate;
                             changeIconColor("B", timeOfDay); // Only change the icon for the current time of day
-                        } else {
-                            output.textContent = `Unknown NFC Tag scanned! Serial Number: ${serialNumber}, Message: ${messageText}`;
                         }
+
+                        // Save the updated table state to localStorage
+                        saveTableState();
                     };
 
                     ndef.onreadingerror = () => {
@@ -151,7 +185,7 @@
             }
         });
 
-        // Reset button logic to reset all icons to red
+        // Reset button logic to reset all icons to red and clear dates
         resetBtn.addEventListener('click', () => {
             const icons = document.querySelectorAll('.icon');
             icons.forEach(icon => {
@@ -161,6 +195,9 @@
             // Clear dates
             document.getElementById("dateA").textContent = '';
             document.getElementById("dateB").textContent = '';
+
+            // Clear localStorage data
+            localStorage.removeItem("tableState");
         });
     </script>
 
