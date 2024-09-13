@@ -29,6 +29,11 @@
             border-radius: 50%;
             display: inline-block;
         }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -66,14 +71,32 @@
 
     <div id="output">Waiting for NFC tag...</div>
 
+    <!-- Reset Button -->
+    <button id="reset-btn">Reset Table</button>
+
     <script>
         const output = document.getElementById('output');
+        const resetBtn = document.getElementById('reset-btn');
 
-        // Function to change the color of an icon from red to green
+        // Function to change the color of an icon based on the time of day
         function changeIconColor(location, timeOfDay) {
             const icon = document.getElementById(timeOfDay + location);
             if (icon) {
                 icon.style.backgroundColor = 'green';
+            }
+        }
+
+        // Determine the time of day (Night, Early, Late)
+        function getTimeOfDay() {
+            const now = new Date();
+            const hours = now.getHours();
+
+            if (hours >= 0 && hours < 6) {
+                return "night";
+            } else if (hours >= 6 && hours < 12) {
+                return "early";
+            } else {
+                return "late";
             }
         }
 
@@ -103,18 +126,15 @@
                         // Get the current date and time
                         const now = new Date();
                         const currentDate = now.toLocaleString();
+                        const timeOfDay = getTimeOfDay(); // Get time of day (Night, Early, Late)
 
                         // Update the table based on the NFC tag scanned (A or B)
                         if (messageText === "A") {
                             document.getElementById("dateA").textContent = currentDate;
-                            changeIconColor("A", "night");
-                            changeIconColor("A", "early");
-                            changeIconColor("A", "late");
+                            changeIconColor("A", timeOfDay); // Only change the icon for the current time of day
                         } else if (messageText === "B") {
                             document.getElementById("dateB").textContent = currentDate;
-                            changeIconColor("B", "night");
-                            changeIconColor("B", "early");
-                            changeIconColor("B", "late");
+                            changeIconColor("B", timeOfDay); // Only change the icon for the current time of day
                         } else {
                             output.textContent = `Unknown NFC Tag scanned! Serial Number: ${serialNumber}, Message: ${messageText}`;
                         }
@@ -129,6 +149,18 @@
             } else {
                 output.textContent = 'Web NFC is not supported on this device.';
             }
+        });
+
+        // Reset button logic to reset all icons to red
+        resetBtn.addEventListener('click', () => {
+            const icons = document.querySelectorAll('.icon');
+            icons.forEach(icon => {
+                icon.style.backgroundColor = 'red';
+            });
+
+            // Clear dates
+            document.getElementById("dateA").textContent = '';
+            document.getElementById("dateB").textContent = '';
         });
     </script>
 
