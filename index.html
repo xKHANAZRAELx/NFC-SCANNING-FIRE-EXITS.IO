@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Auto Scanner</title>
+    <title>NFC Tag Scanner</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,14 +18,14 @@
 </head>
 <body>
 
-    <h1>NFC Tag Auto Scanner1</h1>
+    <h1>NFC Tag Scanner</h1>
     <div id="output">Waiting for NFC tag...</div>
 
     <script>
         const output = document.getElementById('output');
 
-        // Use your Google Apps Script Web App URL
-        const scriptURL = "https://script.google.com/macros/s/AKfycbwfS5WC_R1U_bYdrl9qed58ntBEecJz_XET5TEV53E/dev";
+        // Google Apps Script Web App URL (replace with your actual URL)
+        const scriptURL = "https://script.google.com/macros/s/AKfycbwfS5WC_R1U_bYdrl9qed58ntBEecJz_XET5TEV53E/dev"; // Replace this with your actual Web App URL
 
         // Automatically start NFC scan when the page loads
         window.addEventListener('load', async () => {
@@ -33,13 +33,13 @@
                 try {
                     const ndef = new NDEFReader();
                     await ndef.scan();
-                    output.textContent = 'Auto-scan started. Bring the NFC tag close to your device.';
+                    output.textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
 
                     ndef.onreading = async event => {
                         const { serialNumber, message } = event;
                         let messageText = '';
 
-                        // Process the NFC tag message to get the content (A or B)
+                        // Process the NFC tag message
                         for (const record of message.records) {
                             if (record.recordType === 'text') {
                                 const textDecoder = new TextDecoder(record.encoding);
@@ -57,15 +57,21 @@
                         };
 
                         // Send the data to Google Apps Script via POST request
-                        await fetch(scriptURL, {
+                        const response = await fetch(scriptURL, {
                             method: 'POST',
-                            body: JSON.stringify(data),
+                            body: JSON.stringify(data), // Send JSON data in the body
                             headers: {
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json' // Set content type to JSON
                             }
                         });
 
-                        output.textContent += '\nData sent to Google Sheets!';
+                        // Display the response from the server
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            output.textContent += '\nData successfully sent to Google Sheets!';
+                        } else {
+                            output.textContent += `\nFailed to send data: ${result.message}`;
+                        }
                     };
 
                     ndef.onreadingerror = () => {
