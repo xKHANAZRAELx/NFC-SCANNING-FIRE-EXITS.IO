@@ -3,36 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Scanner</title>
+    <title>NFC Tag Scanner with Table</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             margin-top: 50px;
         }
-        #status {
-            width: 100px;
-            height: 100px;
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        .icon {
+            width: 20px;
+            height: 20px;
             background-color: red;
             border-radius: 50%;
             display: inline-block;
-            margin-top: 20px;
-        }
-        #output {
-            margin-top: 20px;
-            font-size: 18px;
         }
     </style>
 </head>
 <body>
 
-    <h1>NFC Tag Scanner</h1>
-    <div id="status"></div>
+    <h1>NFC Tag Scanner with Table</h1>
+    
+    <!-- Table for Date, Location, Night, Early, Late -->
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Night</th>
+                <th>Early</th>
+                <th>Late</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <tr data-location="A">
+                <td id="dateA"></td>
+                <td>A</td>
+                <td><div class="icon" id="nightA"></div></td>
+                <td><div class="icon" id="earlyA"></div></td>
+                <td><div class="icon" id="lateA"></div></td>
+            </tr>
+            <tr data-location="B">
+                <td id="dateB"></td>
+                <td>B</td>
+                <td><div class="icon" id="nightB"></div></td>
+                <td><div class="icon" id="earlyB"></div></td>
+                <td><div class="icon" id="lateB"></div></td>
+            </tr>
+        </tbody>
+    </table>
+
     <div id="output">Waiting for NFC tag...</div>
 
     <script>
-        const statusIcon = document.getElementById('status');
         const output = document.getElementById('output');
+
+        // Function to change the color of an icon from red to green
+        function changeIconColor(location, timeOfDay) {
+            const icon = document.getElementById(timeOfDay + location);
+            if (icon) {
+                icon.style.backgroundColor = 'green';
+            }
+        }
 
         // Automatically start NFC scan when the page loads
         window.addEventListener('load', async () => {
@@ -54,11 +97,27 @@
                             }
                         }
 
-                        // Change the icon from red to green
-                        statusIcon.style.backgroundColor = 'green';
-                        
                         // Display the scanned data
                         output.textContent = `NFC Tag scanned! Serial Number: ${serialNumber}, Message: ${messageText}`;
+
+                        // Get the current date and time
+                        const now = new Date();
+                        const currentDate = now.toLocaleString();
+
+                        // Update the table based on the NFC tag scanned (A or B)
+                        if (messageText === "A") {
+                            document.getElementById("dateA").textContent = currentDate;
+                            changeIconColor("A", "night");
+                            changeIconColor("A", "early");
+                            changeIconColor("A", "late");
+                        } else if (messageText === "B") {
+                            document.getElementById("dateB").textContent = currentDate;
+                            changeIconColor("B", "night");
+                            changeIconColor("B", "early");
+                            changeIconColor("B", "late");
+                        } else {
+                            output.textContent = `Unknown NFC Tag scanned! Serial Number: ${serialNumber}, Message: ${messageText}`;
+                        }
                     };
 
                     ndef.onreadingerror = () => {
