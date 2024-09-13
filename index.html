@@ -3,21 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Scanner</title>
+    <title>NFC Tag Auto Scanner</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             margin-top: 50px;
-        }
-        #scanButton {
-            padding: 10px 20px;
-            font-size: 18px;
-            cursor: pointer;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
         }
         #output {
             margin-top: 20px;
@@ -27,24 +18,22 @@
 </head>
 <body>
 
-    <h1>NFC Tag Scanner</h1>
-    <button id="scanButton">Scan NFC Tag</button>
+    <h1>NFC Tag Auto Scanner</h1>
     <div id="output"></div>
 
     <script>
-        const scanButton = document.getElementById('scanButton');
         const output = document.getElementById('output');
 
-        // URL of the Google Apps Script Web App
-        const scriptURL = "https://script.google.com/macros/s/AKfycbyYqcMdtR3Faom-BLKZLcqTbl9VAQ2fTFIgWQv8fi0ovkgSq6HsLsCiitT675OSLlSF/exec"; // Replace with your Apps Script URL
+        // Use your Google Apps Script Web App URL
+        const scriptURL = "https://script.google.com/macros/s/AKfycbwfS5WC_R1U_bYdrl9qed58ntBEecJz_XET5TEV53E/dev";
 
-        // Check if NFC is supported
-        if ('NDEFReader' in window) {
-            scanButton.addEventListener('click', async () => {
+        // Automatically start NFC scan when the page loads
+        window.addEventListener('load', async () => {
+            if ('NDEFReader' in window) {
                 try {
                     const ndef = new NDEFReader();
                     await ndef.scan();
-                    output.textContent = 'Scan started, bring the NFC tag close to your device.';
+                    output.textContent = 'Auto-scan started. Bring the NFC tag close to your device.';
 
                     ndef.onreading = async event => {
                         const { serialNumber, message } = event;
@@ -63,7 +52,7 @@
                         // Prepare the data to send to Google Sheets
                         const data = {
                             serialNumber: serialNumber,
-                            message: messageText
+                            message: messageText || 'No message'
                         };
 
                         // Send the data to Google Apps Script via POST request
@@ -84,10 +73,10 @@
                 } catch (error) {
                     output.textContent = `Error: ${error.message}`;
                 }
-            });
-        } else {
-            output.textContent = 'Web NFC is not supported on this device.';
-        }
+            } else {
+                output.textContent = 'Web NFC is not supported on this device.';
+            }
+        });
     </script>
 
 </body>
