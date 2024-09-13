@@ -3,91 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Scanning Status</title>
+    <title>NFC Tag Scanner</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-        }
-        h1 {
             text-align: center;
-            color: #333;
+            margin-top: 50px;
+        }
+        #scanButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
         }
         #output {
-            text-align: center;
             margin-top: 20px;
-            color: #333;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
 
-    <h1>NFC Scanning Status</h1>
-
-    <div id="output">Bring an NFC tag close to scan...</div>
+    <h1>NFC Tag Scanner</h1>
+    <button id="scanButton">Scan NFC Tag</button>
+    <div id="output"></div>
 
     <script>
-        const webAppURL = "https://script.google.com/macros/s/AKfycbwfS5WC_R1U_bYdrl9qed58ntBEecJz_XET5TEV53E/dev";  // Your Google Apps Script URL
+        const scanButton = document.getElementById('scanButton');
+        const output = document.getElementById('output');
 
-        // Automatically start NFC scanning when the page loads
+        // Check if NFC is supported
         if ('NDEFReader' in window) {
-            const output = document.getElementById('output');
-
-            async function startNFCScan() {
+            scanButton.addEventListener('click', async () => {
                 try {
                     const ndef = new NDEFReader();
                     await ndef.scan();
+                    output.textContent = 'Scan started, bring the NFC tag close to your device.';
 
-                    ndef.onreading = (event) => {
-                        const record = event.message.records[0];
-                        let tagText = '';
+                    ndef.onreading = event => {
+                        const { serialNumber, message } = event;
+                        output.textContent = `NFC Tag scanned! Serial Number: ${serialNumber}`;
 
-                        if (record.recordType === "text") {
-                            const textDecoder = new TextDecoder(record.encoding);
-                            tagText = textDecoder.decode(record.data);
+                        // Process the message (if needed)
+                        for (const record of message.records) {
+                            if (record.recordType === 'text') {
+                                const textDecoder = new TextDecoder(record.encoding);
+                                const messageText = textDecoder.decode(record.data);
+                                output.textContent += `\nMessage: ${messageText}`;
+                            }
                         }
+                    };
 
-                        output.innerHTML = `Tag Scanned: ${tagText}`;
-
-                        // Call function to update the scan status and post it to Google Sheets
-                        updateScanStatus(tagText);
+                    ndef.onreadingerror = () => {
+                        output.textContent = 'Failed to read the NFC tag. Try again.';
                     };
                 } catch (error) {
-                    if (error.message.includes('declined')) {
-                        output.innerHTML = "NFC permission declined. Please enable NFC permissions for the browser.";
-                    } else {
-                        output.innerHTML = `NFC scan failed: ${error.message}`;
-                    }
+                    output.textContent = `Error: ${error.message}`;
                 }
-            }
-
-            window.addEventListener('load', startNFCScan);
+            });
         } else {
-            document.getElementById('output').innerHTML = "NFC not supported on this device.";
-        }
-
-        // Update scan status and send the data to Google Sheets
-        async function updateScanStatus(location) {
-            try {
-                const requestData = { fireExit: location };
-                const response = await fetch(webAppURL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',  // Ensure JSON content
-                    },
-                    body: JSON.stringify(requestData),
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    output.innerHTML = `${location} has been updated in Google Sheets.`;
-                } else {
-                    throw new Error('Failed to update status');
-                }
-            } catch (error) {
-                output.innerHTML = `Error updating status: ${error.message}`;
-            }
+            output.textContent = 'Web NFC is not supported on this device.';
         }
     </script>
+
 </body>
 </html>
