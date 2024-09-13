@@ -25,8 +25,8 @@
     <div id="status">NFC Scan Status: Waiting for scan...</div>
 
     <script type="module">
-        // Firebase configuration (your provided config)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+        // Firebase configuration
+        import { initializeApp, setLogLevel } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
         import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -59,7 +59,7 @@
                     const decoder = new TextDecoder();
                     const nfcData = decoder.decode(record.data);
 
-                    // Write data to Firebase
+                    // Write NFC data to Firebase
                     set(ref(database, 'nfcScans/' + Date.now()), {
                         data: nfcData,
                         timestamp: Date.now()
@@ -67,10 +67,12 @@
                         statusElement.textContent = "Data written to Firebase: " + nfcData;
                     }).catch((error) => {
                         statusElement.textContent = "Error writing to Firebase: " + error.message;
+                        console.error("Firebase error: ", error);
                     });
                 };
             }).catch(error => {
                 statusElement.textContent = "NFC scan failed: " + error.message;
+                console.error("NFC error: ", error);
             });
         } else {
             statusElement.textContent = "NFC is not supported by this browser.";
