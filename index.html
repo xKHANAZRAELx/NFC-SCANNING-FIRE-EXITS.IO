@@ -215,10 +215,21 @@
         function handleNFCScan(tag) {
             const currentDate = new Date().toLocaleString();
             const timeOfDay = getTimeOfDay();
-            const location = tag;
+            const location = tag.trim().toUpperCase(); // Normalize tag to match location
 
-            document.getElementById(`date${location}`).textContent = currentDate;
-            document.getElementById(`${timeOfDay}${location}`).classList.add('green');
+            // Set the date for the scanned tag
+            const dateCell = document.getElementById(`date${location}`);
+            if (dateCell) {
+                dateCell.textContent = currentDate;
+
+                // Turn the correct icon green based on the time of day
+                const iconToChange = document.getElementById(`${timeOfDay}${location}`);
+                if (iconToChange) {
+                    iconToChange.classList.add('green');
+                }
+            } else {
+                document.getElementById('output').textContent = `Location ${location} not found.`;
+            }
         }
 
         // Function to get the time of day (Night, Early, Late)
