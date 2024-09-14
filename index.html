@@ -4,45 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFC Tag Scanner - Night, Early, Late</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
             text-align: center;
-            margin-top: 50px;
+            padding: 50px;
+        }
+        h1 {
+            color: #1f78d1;
+            margin-bottom: 30px;
+            font-size: 36px;
         }
         table {
             margin: 20px auto;
             border-collapse: collapse;
             width: 80%;
-        }
-        table, th, td {
-            border: 1px solid black;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         th, td {
-            padding: 10px;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
             text-align: center;
+            font-size: 18px;
+        }
+        th {
+            background-color: #1f78d1;
+            color: white;
         }
         .icon {
             display: inline-block;
-            width: 20px;
-            height: 20px;
+            width: 25px;
+            height: 25px;
             background-color: red;
             border-radius: 50%;
         }
         .green {
             background-color: green;
         }
-        #output {
-            margin-top: 20px;
-            font-size: 18px;
-        }
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
+        .calendar-icon {
+            cursor: pointer;
+            font-size: 24px;
+            color: #1f78d1;
         }
         .button-container {
             margin: 20px;
+        }
+        button, .button-container a button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #1f78d1;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+        button:hover, .button-container a button:hover {
+            background-color: #155a9a;
+        }
+        a {
+            text-decoration: none;
+        }
+        #output {
+            font-size: 20px;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -74,19 +104,10 @@
         <a href="admin.html"><button>Admin Login</button></a>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <script>
-        function getTodayDate() {
-            const today = new Date();
-            return today.toISOString().split('T')[0];  // Extract YYYY-MM-DD format
-        }
-
-        function getYesterdayDate() {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            return yesterday.toISOString().split('T')[0];
-        }
-
-        // Function to load locations and dynamically add rows
+        // Initialize the table with locations
         function loadLocations() {
             const tableBody = document.getElementById('table-body');
             tableBody.innerHTML = '';  // Clear existing table rows
@@ -95,7 +116,7 @@
             locations.forEach(location => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td id="date${location}"></td>
+                    <td><span class="calendar-icon" data-location="${location}">📅</span></td>
                     <td>${location}</td>
                     <td><div class="icon" id="night${location}"></div></td>
                     <td><div class="icon" id="early${location}"></div></td>
@@ -103,39 +124,19 @@
                 `;
                 tableBody.appendChild(row);
             });
-        }
 
-        // Load and display today's logs or yesterday's logs
-        function loadLogsForDay(day) {
-            const logsForDay = JSON.parse(localStorage.getItem(day));
-            if (logsForDay) {
-                document.getElementById("dateA").textContent = logsForDay.dateA || '';
-                document.getElementById("dateB").textContent = logsForDay.dateB || '';
-                document.getElementById("nightA").className = logsForDay.nightA || 'icon';
-                document.getElementById("earlyA").className = logsForDay.earlyA || 'icon';
-                document.getElementById("lateA").className = logsForDay.lateA || 'icon';
-                document.getElementById("nightB").className = logsForDay.nightB || 'icon';
-                document.getElementById("earlyB").className = logsForDay.earlyB || 'icon';
-                document.getElementById("lateB").className = logsForDay.lateB || 'icon';
-            } else {
-                alert(`No logs found for ${day}`);
-            }
-        }
-
-        // Save today's logs to localStorage
-        function saveLogsForDay() {
-            const currentDay = getTodayDate();
-            const logsForDay = {
-                dateA: document.getElementById("dateA").textContent,
-                dateB: document.getElementById("dateB").textContent,
-                nightA: document.getElementById("nightA").className,
-                earlyA: document.getElementById("earlyA").className,
-                lateA: document.getElementById("lateA").className,
-                nightB: document.getElementById("nightB").className,
-                earlyB: document.getElementById("earlyB").className,
-                lateB: document.getElementById("lateB").className
-            };
-            localStorage.setItem(currentDay, JSON.stringify(logsForDay));
+            // Initialize calendar picker for each date icon
+            const calendarIcons = document.querySelectorAll('.calendar-icon');
+            calendarIcons.forEach(icon => {
+                const location = icon.getAttribute('data-location');
+                flatpickr(icon, {
+                    dateFormat: "Y-m-d",
+                    onChange: function(selectedDates) {
+                        const date = selectedDates[0].toISOString().split('T')[0];
+                        window.location.href = `logs.html?date=${date}&location=${location}`;
+                    }
+                });
+            });
         }
 
         // Reset the table
@@ -144,36 +145,25 @@
             icons.forEach(icon => {
                 icon.classList.remove('green');
             });
+        }
 
-            // Clear dates
-            document.getElementById("dateA").textContent = '';
-            document.getElementById("dateB").textContent = '';
-
-            saveLogsForDay();
+        // View yesterday's logs
+        function viewYesterdaysLogs() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const date = yesterday.toISOString().split('T')[0];
+            window.location.href = `logs.html?date=${date}&location=A`;
         }
 
         window.addEventListener('load', () => {
             loadLocations();  // Load locations dynamically on page load
 
-            const today = getTodayDate();
-            loadLogsForDay(today);  // Load today's logs if available
-
             // Reset button logic
             document.getElementById('reset-btn').addEventListener('click', resetTable);
 
             // View yesterday's logs button logic
-            document.getElementById('view-yesterday-btn').addEventListener('click', () => {
-                const yesterday = getYesterdayDate();
-                loadLogsForDay(yesterday);  // Load yesterday's logs
-            });
+            document.getElementById('view-yesterday-btn').addEventListener('click', viewYesterdaysLogs);
         });
-
-        // Simulate NFC scanning logic (for demo purposes)
-        async function handleNFCScan(tag) {
-            const currentDate = new Date().toLocaleString();
-            document.getElementById(`date${tag}`).textContent = currentDate;
-            // Logic to update the icons (night, early, late)
-        }
     </script>
 
 </body>

@@ -6,26 +6,41 @@
     <title>Admin Login</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
             text-align: center;
-            margin-top: 50px;
+            padding: 50px;
         }
-        .hidden {
-            display: none;
-        }
-        form {
-            display: inline-block;
-            margin: 20px;
+        h1 {
+            color: #1f78d1;
+            margin-bottom: 30px;
+            font-size: 32px;
         }
         input[type="password"], input[type="text"] {
             padding: 10px;
             font-size: 16px;
             margin: 10px 0;
+            width: 250px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
         }
         button {
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #1f78d1;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
             margin-top: 10px;
+        }
+        button:hover {
+            background-color: #155a9a;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -46,7 +61,7 @@
     </div>
 
     <script>
-        const correctPassword = "admin123";  // Admin password (can be changed)
+        const correctPassword = "admin123";  // Admin password
 
         // Handle login form submission
         document.getElementById('login-form').addEventListener('submit', function (e) {

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs for Selected Date</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            color: #1f78d1;
+            margin-bottom: 30px;
+            font-size: 36px;
+        }
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 80%;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+            font-size: 18px;
+        }
+        th {
+            background-color: #1f78d1;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Logs for <span id="selected-date"></span> - Location <span id="selected-location"></span></h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Event</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody id="logs-body">
+            <!-- Logs will be dynamically added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Parse URL parameters
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                date: params.get('date'),
+                location: params.get('location')
+            };
+        }
+
+        function loadLogs() {
+            const { date, location } = getUrlParams();
+            document.getElementById('selected-date').textContent = date;
+            document.getElementById('selected-location').textContent = location;
+
+            const logsBody = document.getElementById('logs-body');
+            logsBody.innerHTML = '';  // Clear existing logs
+
+            // Load logs from localStorage
+            const logsForDay = JSON.parse(localStorage.getItem(date)) || {};
+            const events = logsForDay[location] || [];
+
+            events.forEach(event => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${event.type}</td>
+                    <td>${event.time}</td>
+                `;
+                logsBody.appendChild(row);
+            });
+        }
+
+        window.addEventListener('load', loadLogs);
+    </script>
+
+</body>
+</html>
