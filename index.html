@@ -1,11 +1,249 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>NFC Tag Scanner - Night, Early, Late</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #1f78d1;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 600px;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+            font-size: 16px;
+        }
+        th {
+            background-color: #1f78d1;
+            color: white;
+        }
+        .icon {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: red;
+            border-radius: 50%;
+        }
+        .green {
+            background-color: green;
+        }
+        .calendar-icon {
+            cursor: pointer;
+            font-size: 24px;
+            color: #1f78d1;
+        }
+        .button-container {
+            margin: 20px;
+        }
+        button, .button-container a button {
+            padding: 12px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            background-color: #1f78d1;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 5px;
+        }
+        button:hover, .button-container a button:hover {
+            background-color: #155a9a;
+        }
+        a {
+            text-decoration: none;
+        }
+        #output {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        @media only screen and (max-width: 600px) {
+            h1 {
+                font-size: 24px;
+            }
+            table {
+                font-size: 14px;
+            }
+            button {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+        }
+    </style>
 </head>
 <body>
-    
+
+    <h1>NFC Tag Scanner - Night, Early, Late</h1>
+    <div id="output">Waiting for NFC tag...</div>
+
+    <!-- Table for Date, Location, Night, Early, Late -->
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Night</th>
+                <th>Early</th>
+                <th>Late</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <!-- Locations will be dynamically added here -->
+        </tbody>
+    </table>
+
+    <!-- Buttons for Admin Page, Reset, and View Yesterday's Logs -->
+    <div class="button-container">
+        <button id="reset-btn">Reset Table</button>
+        <button id="view-yesterday-btn">View Yesterday's Logs</button>
+        <a href="admin.html"><button>Admin Login</button></a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script>
+        // Initialize the table with locations
+        function loadLocations() {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';  // Clear existing table rows
+
+            const locations = JSON.parse(localStorage.getItem('locations')) || ['A', 'B']; // Default locations A and B
+            locations.forEach(location => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="calendar-icon" data-location="${location}">📅</span></td>
+                    <td>${location}</td>
+                    <td><div class="icon" id="night${location}"></div></td>
+                    <td><div class="icon" id="early${location}"></div></td>
+                    <td><div class="icon" id="late${location}"></div></td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            // Initialize calendar picker for each date icon
+            const calendarIcons = document.querySelectorAll('.calendar-icon');
+            calendarIcons.forEach(icon => {
+                const location = icon.getAttribute('data-location');
+                flatpickr(icon, {
+                    dateFormat: "Y-m-d",
+                    onChange: function(selectedDates) {
+                        const date = selectedDates[0].toISOString().split('T')[0];
+                        window.location.href = `logs.html?date=${date}&location=${location}`;
+                    }
+                });
+            });
+        }
+
+        // Reset the table
+        function resetTable() {
+            const icons = document.querySelectorAll('.icon');
+            icons.forEach(icon => {
+                icon.classList.remove('green');
+            });
+        }
+
+        // View yesterday's logs
+        function viewYesterdaysLogs() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const date = yesterday.toISOString().split('T')[0];
+            window.location.href = `logs.html?date=${date}&location=A`;
+        }
+
+        // Automatically start NFC scan when the page loads
+        window.addEventListener('load', async () => {
+            loadLocations();  // Load locations dynamically on page load
+
+            // Reset button logic
+            document.getElementById('reset-btn').addEventListener('click', resetTable);
+
+            // View yesterday's logs button logic
+            document.getElementById('view-yesterday-btn').addEventListener('click', viewYesterdaysLogs);
+
+            // Check if NFC scanning is supported and start scanning
+            if ('NDEFReader' in window) {
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+                    document.getElementById('output').textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
+
+                    ndef.onreading = event => {
+                        const message = event.message;
+                        let messageText = '';
+
+                        for (const record of message.records) {
+                            if (record.recordType === 'text') {
+                                const textDecoder = new TextDecoder(record.encoding);
+                                messageText = textDecoder.decode(record.data);
+                            }
+                        }
+
+                        document.getElementById('output').textContent = `NFC Tag scanned! Message: ${messageText}`;
+                        handleNFCScan(messageText);
+                    };
+
+                    ndef.onreadingerror = () => {
+                        document.getElementById('output').textContent = 'Failed to read NFC tag. Try again.';
+                    };
+                } catch (error) {
+                    document.getElementById('output').textContent = `Error: ${error.message}`;
+                }
+            } else {
+                document.getElementById('output').textContent = 'Web NFC is not supported on this device.';
+            }
+        });
+
+        // Function to handle NFC scan logic and update the table
+        function handleNFCScan(tag) {
+            const currentDate = new Date().toLocaleString();
+            const timeOfDay = getTimeOfDay();
+            const location = tag.trim().toUpperCase(); // Normalize tag to match location
+
+            // Set the date for the scanned tag
+            const dateCell = document.getElementById(`date${location}`);
+            if (dateCell) {
+                dateCell.textContent = currentDate;
+
+                // Turn the correct icon green based on the time of day
+                const iconToChange = document.getElementById(`${timeOfDay}${location}`);
+                if (iconToChange) {
+                    iconToChange.classList.add('green');
+                }
+            } else {
+                document.getElementById('output').textContent = `Location ${location} not found.`;
+            }
+        }
+
+        // Function to get the time of day (Night, Early, Late)
+        function getTimeOfDay() {
+            const hours = new Date().getHours();
+            if (hours >= 0 && hours < 6) {
+                return "night";
+            } else if (hours >= 6 && hours < 12) {
+                return "early";
+            } else {
+                return "late";
+            }
+        }
+    </script>
+
 </body>
 </html>
