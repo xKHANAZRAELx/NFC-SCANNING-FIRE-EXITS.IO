@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .hidden {
+            display: none;
+        }
+        form {
+            display: inline-block;
+            margin: 20px;
+        }
+        input[type="password"], input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Admin Login</h1>
+    <form id="login-form">
+        <input type="password" id="password" placeholder="Enter password">
+        <button type="submit">Login</button>
+    </form>
+
+    <div id="admin-section" class="hidden">
+        <h2>Add New Location</h2>
+        <form id="add-location-form">
+            <input type="text" id="new-location" placeholder="Enter new location (e.g., C, D)">
+            <button type="submit">Add Location</button>
+        </form>
+    </div>
+
+    <script>
+        const correctPassword = "admin123";  // Admin password (can be changed)
+
+        // Handle login form submission
+        document.getElementById('login-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+
+            if (password === correctPassword) {
+                document.getElementById('login-form').classList.add('hidden');
+                document.getElementById('admin-section').classList.remove('hidden');
+            } else {
+                alert('Incorrect password!');
+            }
+        });
+
+        // Handle adding new locations to localStorage
+        document.getElementById('add-location-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const newLocation = document.getElementById('new-location').value.trim();
+
+            if (newLocation) {
+                let locations = JSON.parse(localStorage.getItem('locations')) || [];
+                locations.push(newLocation);
+                localStorage.setItem('locations', JSON.stringify(locations));
+
+                alert(`Location ${newLocation} added successfully!`);
+
+                // Redirect to index.html after adding the location
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+
+</body>
+</html>

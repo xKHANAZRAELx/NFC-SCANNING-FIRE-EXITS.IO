@@ -41,6 +41,9 @@
             padding: 10px 20px;
             font-size: 16px;
         }
+        .button-container {
+            margin: 20px;
+        }
     </style>
 </head>
 <body>
@@ -60,46 +63,69 @@
             </tr>
         </thead>
         <tbody id="table-body">
-            <tr data-location="A">
-                <td id="dateA"></td>
-                <td>A</td>
-                <td><div class="icon" id="nightA"></div></td>
-                <td><div class="icon" id="earlyA"></div></td>
-                <td><div class="icon" id="lateA"></div></td>
-            </tr>
-            <tr data-location="B">
-                <td id="dateB"></td>
-                <td>B</td>
-                <td><div class="icon" id="nightB"></div></td>
-                <td><div class="icon" id="earlyB"></div></td>
-                <td><div class="icon" id="lateB"></div></td>
-            </tr>
+            <!-- Locations will be dynamically added here -->
         </tbody>
     </table>
 
-    <button id="reset-btn">Reset Table</button>
+    <!-- Buttons for Admin Page, Reset, and View Yesterday's Logs -->
+    <div class="button-container">
+        <button id="reset-btn">Reset Table</button>
+        <button id="view-yesterday-btn">View Yesterday's Logs</button>
+        <a href="admin.html"><button>Admin Login</button></a>
+    </div>
 
     <script>
-        const output = document.getElementById('output');
-        const resetBtn = document.getElementById('reset-btn');
-
-        // Get today's date as a string (formatted as YYYY-MM-DD)
         function getTodayDate() {
             const today = new Date();
             return today.toISOString().split('T')[0];  // Extract YYYY-MM-DD format
         }
 
-        // Function to change the color of an icon based on the time of day
-        function changeIconColor(location, timeOfDay) {
-            const icon = document.getElementById(timeOfDay + location);
-            if (icon) {
-                icon.classList.add('green');
+        function getYesterdayDate() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            return yesterday.toISOString().split('T')[0];
+        }
+
+        // Function to load locations and dynamically add rows
+        function loadLocations() {
+            const tableBody = document.getElementById('table-body');
+            tableBody.innerHTML = '';  // Clear existing table rows
+
+            const locations = JSON.parse(localStorage.getItem('locations')) || ['A', 'B']; // Default locations A and B
+            locations.forEach(location => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td id="date${location}"></td>
+                    <td>${location}</td>
+                    <td><div class="icon" id="night${location}"></div></td>
+                    <td><div class="icon" id="early${location}"></div></td>
+                    <td><div class="icon" id="late${location}"></div></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Load and display today's logs or yesterday's logs
+        function loadLogsForDay(day) {
+            const logsForDay = JSON.parse(localStorage.getItem(day));
+            if (logsForDay) {
+                document.getElementById("dateA").textContent = logsForDay.dateA || '';
+                document.getElementById("dateB").textContent = logsForDay.dateB || '';
+                document.getElementById("nightA").className = logsForDay.nightA || 'icon';
+                document.getElementById("earlyA").className = logsForDay.earlyA || 'icon';
+                document.getElementById("lateA").className = logsForDay.lateA || 'icon';
+                document.getElementById("nightB").className = logsForDay.nightB || 'icon';
+                document.getElementById("earlyB").className = logsForDay.earlyB || 'icon';
+                document.getElementById("lateB").className = logsForDay.lateB || 'icon';
+            } else {
+                alert(`No logs found for ${day}`);
             }
         }
 
-        // Save the table state (date and icon colors) to localStorage
-        function saveTableState() {
-            const tableState = {
+        // Save today's logs to localStorage
+        function saveLogsForDay() {
+            const currentDay = getTodayDate();
+            const logsForDay = {
                 dateA: document.getElementById("dateA").textContent,
                 dateB: document.getElementById("dateB").textContent,
                 nightA: document.getElementById("nightA").className,
@@ -107,114 +133,10 @@
                 lateA: document.getElementById("lateA").className,
                 nightB: document.getElementById("nightB").className,
                 earlyB: document.getElementById("earlyB").className,
-                lateB: document.getElementById("lateB").className,
-                lastReset: getTodayDate()  // Save the current date
+                lateB: document.getElementById("lateB").className
             };
-            localStorage.setItem("tableState", JSON.stringify(tableState));
+            localStorage.setItem(currentDay, JSON.stringify(logsForDay));
         }
-
-        // Load the table state from localStorage
-        function loadTableState() {
-            const tableState = JSON.parse(localStorage.getItem("tableState"));
-            if (tableState) {
-                document.getElementById("dateA").textContent = tableState.dateA || '';
-                document.getElementById("dateB").textContent = tableState.dateB || '';
-                document.getElementById("nightA").className = tableState.nightA || 'icon';
-                document.getElementById("earlyA").className = tableState.earlyA || 'icon';
-                document.getElementById("lateA").className = tableState.lateA || 'icon';
-                document.getElementById("nightB").className = tableState.nightB || 'icon';
-                document.getElementById("earlyB").className = tableState.earlyB || 'icon';
-                document.getElementById("lateB").className = tableState.lateB || 'icon';
-            }
-        }
-
-        // Check if today is different from the last reset date
-        function shouldResetTable() {
-            const tableState = JSON.parse(localStorage.getItem("tableState"));
-            if (!tableState || tableState.lastReset !== getTodayDate()) {
-                return true;  // Should reset if no data exists or the last reset was on a different day
-            }
-            return false;
-        }
-
-        // Automatically reset the table if it's a new day
-        function resetTableIfNewDay() {
-            if (shouldResetTable()) {
-                resetTable();  // Reset the table if it's a new day
-            }
-        }
-
-        // Determine the time of day (Night, Early, Late)
-        function getTimeOfDay() {
-            const now = new Date();
-            const hours = now.getHours();
-
-            if (hours >= 0 && hours < 6) {
-                return "night";
-            } else if (hours >= 6 && hours < 12) {
-                return "early";
-            } else {
-                return "late";
-            }
-        }
-
-        // Automatically start NFC scan when the page loads
-        window.addEventListener('load', async () => {
-            // Automatically reset the table if it's a new day
-            resetTableIfNewDay();
-
-            // Load the previous table state from localStorage
-            loadTableState();
-
-            if ('NDEFReader' in window) {
-                try {
-                    const ndef = new NDEFReader();
-                    await ndef.scan();
-                    output.textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
-
-                    ndef.onreading = async event => {
-                        const { message } = event;
-                        let messageText = '';
-
-                        // Process the NFC tag message
-                        for (const record of message.records) {
-                            if (record.recordType === 'text') {
-                                const textDecoder = new TextDecoder(record.encoding);
-                                messageText = textDecoder.decode(record.data);
-                            }
-                        }
-
-                        // Display the scanned data
-                        output.textContent = `NFC Tag scanned! Message: ${messageText}`;
-
-                        // Get the current date and time
-                        const now = new Date();
-                        const currentDate = now.toLocaleString();
-                        const timeOfDay = getTimeOfDay(); // Get time of day (Night, Early, Late)
-
-                        // Update the table based on the NFC tag scanned (A or B)
-                        if (messageText === "A") {
-                            document.getElementById("dateA").textContent = currentDate;
-                            changeIconColor("A", timeOfDay); // Only change the icon for the current time of day
-                        } else if (messageText === "B") {
-                            document.getElementById("dateB").textContent = currentDate;
-                            changeIconColor("B", timeOfDay); // Only change the icon for the current time of day
-                        }
-
-                        // Save the updated table state to localStorage
-                        saveTableState();
-                    };
-
-                    ndef.onreadingerror = () => {
-                        output.textContent = 'Failed to read the NFC tag. Try again.';
-                    };
-                } catch (error) {
-                    output.textContent = `Error: ${error.message}`;
-                }
-            } else {
-                output.textContent = 'Web NFC is not supported on this device.';
-            }
-        });
 
         // Reset the table
         function resetTable() {
@@ -227,14 +149,31 @@
             document.getElementById("dateA").textContent = '';
             document.getElementById("dateB").textContent = '';
 
-            // Save the reset state (with today's date)
-            saveTableState();
+            saveLogsForDay();
         }
 
-        // Manual reset button logic
-        resetBtn.addEventListener('click', () => {
-            resetTable();
+        window.addEventListener('load', () => {
+            loadLocations();  // Load locations dynamically on page load
+
+            const today = getTodayDate();
+            loadLogsForDay(today);  // Load today's logs if available
+
+            // Reset button logic
+            document.getElementById('reset-btn').addEventListener('click', resetTable);
+
+            // View yesterday's logs button logic
+            document.getElementById('view-yesterday-btn').addEventListener('click', () => {
+                const yesterday = getYesterdayDate();
+                loadLogsForDay(yesterday);  // Load yesterday's logs
+            });
         });
+
+        // Simulate NFC scanning logic (for demo purposes)
+        async function handleNFCScan(tag) {
+            const currentDate = new Date().toLocaleString();
+            document.getElementById(`date${tag}`).textContent = currentDate;
+            // Logic to update the icons (night, early, late)
+        }
     </script>
 
 </body>
