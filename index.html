@@ -22,6 +22,12 @@
             padding: 10px;
             text-align: center;
         }
+        .green {
+            background-color: green;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+        }
         #output {
             margin-top: 20px;
             font-size: 18px;
@@ -30,7 +36,7 @@
 </head>
 <body>
 
-    <h1>NFC Tag Scanner with Google Sheets1</h1>
+    <h1>NFC Tag Scanner with Google Sheets</h1>
     <div id="output">Waiting for NFC tag...</div>
 
     <table>
@@ -46,8 +52,8 @@
     </table>
 
     <script type="text/javascript">
-        // Replace with your Google Apps Script Web App URL
-        const scriptURL = "https://script.google.com/macros/s/AKfycbw4Hwf8Ah5a8ba7Z_g6GhWo4p1YdXCImI14mgsALRPNqCR9Nfkc_tjpC02z5WF5JSGIlA/exec"; // Replace with your actual Web App URL
+        // Final Google Apps Script Web App URL
+        const scriptURL = "https://script.google.com/macros/s/AKfycbw4Hwf8Ah5a8ba7Z_g6GhWo4p1YdXCImI14mgsALRPNqCR9Nfkc_tjpC02z5WF5JSGIlA/exec"; // Your final Web App URL
 
         // Function to send NFC scan data to Google Sheets
         async function saveScanToGoogleSheets(tag, date) {
@@ -78,6 +84,7 @@
 
             dateCell.textContent = date;
             tagCell.textContent = tag;
+            tagCell.classList.add("green"); // Show green indicator for scanned tag
 
             newRow.appendChild(dateCell);
             newRow.appendChild(tagCell);
