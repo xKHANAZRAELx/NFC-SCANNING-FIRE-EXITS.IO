@@ -11,25 +11,26 @@
             background-color: #f4f6f9;
             color: #333;
             text-align: center;
-            padding: 50px;
+            padding: 20px;
         }
         h1 {
             color: #1f78d1;
-            margin-bottom: 30px;
-            font-size: 36px;
+            margin-bottom: 20px;
+            font-size: 28px;
         }
         table {
             margin: 20px auto;
             border-collapse: collapse;
-            width: 80%;
+            width: 100%;
+            max-width: 600px;
             background-color: white;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         th, td {
-            padding: 15px;
+            padding: 10px;
             border-bottom: 1px solid #ddd;
             text-align: center;
-            font-size: 18px;
+            font-size: 16px;
         }
         th {
             background-color: #1f78d1;
@@ -54,15 +55,15 @@
             margin: 20px;
         }
         button, .button-container a button {
-            padding: 12px 24px;
-            font-size: 16px;
+            padding: 12px 20px;
+            font-size: 14px;
             border: none;
             border-radius: 5px;
             background-color: #1f78d1;
             color: white;
             cursor: pointer;
             transition: background-color 0.3s;
-            margin-right: 10px;
+            margin-right: 5px;
         }
         button:hover, .button-container a button:hover {
             background-color: #155a9a;
@@ -71,8 +72,20 @@
             text-decoration: none;
         }
         #output {
-            font-size: 20px;
+            font-size: 18px;
             margin-top: 20px;
+        }
+        @media only screen and (max-width: 600px) {
+            h1 {
+                font-size: 24px;
+            }
+            table {
+                font-size: 14px;
+            }
+            button {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -155,7 +168,8 @@
             window.location.href = `logs.html?date=${date}&location=A`;
         }
 
-        window.addEventListener('load', () => {
+        // Automatically start NFC scan when the page loads
+        window.addEventListener('load', async () => {
             loadLocations();  // Load locations dynamically on page load
 
             // Reset button logic
@@ -163,7 +177,61 @@
 
             // View yesterday's logs button logic
             document.getElementById('view-yesterday-btn').addEventListener('click', viewYesterdaysLogs);
+
+            // Check if NFC scanning is supported and start scanning
+            if ('NDEFReader' in window) {
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+                    document.getElementById('output').textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
+
+                    ndef.onreading = event => {
+                        const message = event.message;
+                        let messageText = '';
+
+                        for (const record of message.records) {
+                            if (record.recordType === 'text') {
+                                const textDecoder = new TextDecoder(record.encoding);
+                                messageText = textDecoder.decode(record.data);
+                            }
+                        }
+
+                        document.getElementById('output').textContent = `NFC Tag scanned! Message: ${messageText}`;
+                        handleNFCScan(messageText);
+                    };
+
+                    ndef.onreadingerror = () => {
+                        document.getElementById('output').textContent = 'Failed to read NFC tag. Try again.';
+                    };
+                } catch (error) {
+                    document.getElementById('output').textContent = `Error: ${error.message}`;
+                }
+            } else {
+                document.getElementById('output').textContent = 'Web NFC is not supported on this device.';
+            }
         });
+
+        // Function to handle NFC scan logic and update the table
+        function handleNFCScan(tag) {
+            const currentDate = new Date().toLocaleString();
+            const timeOfDay = getTimeOfDay();
+            const location = tag;
+
+            document.getElementById(`date${location}`).textContent = currentDate;
+            document.getElementById(`${timeOfDay}${location}`).classList.add('green');
+        }
+
+        // Function to get the time of day (Night, Early, Late)
+        function getTimeOfDay() {
+            const hours = new Date().getHours();
+            if (hours >= 0 && hours < 6) {
+                return "night";
+            } else if (hours >= 6 && hours < 12) {
+                return "early";
+            } else {
+                return "late";
+            }
+        }
     </script>
 
 </body>
