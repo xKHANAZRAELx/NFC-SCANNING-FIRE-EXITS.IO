@@ -18,18 +18,18 @@
 </head>
 <body>
 
-    <h1>NFC Tag Scanner with Google Sheets</h1>
+    <h1>NFC Tag Scanner with Google Sheets1</h1>
     <div id="output">Waiting for NFC tag...</div>
 
     <script type="text/javascript">
         // Google Apps Script Web App URL (replace with your actual URL)
-        const scriptURL = "https://script.google.com/macros/s/AKfycbyPvdWn42osaxKTwZJe2aSftzy2psC3fpwU1QbMexzx/dev"; // Replace with your Web App URL
+        const scriptURL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL"; // Replace with your Web App URL
 
         // Function to send NFC scan data to Google Sheets
         async function saveScanToGoogleSheets(tag) {
             const data = { tag: tag };
 
-            // Send the data via POST request
+            // Send the data via POST request with correct JSON body
             const response = await fetch(scriptURL, {
                 method: 'POST',
                 body: JSON.stringify(data),
@@ -42,7 +42,7 @@
             console.log(result);
         }
 
-        // Function to handle NFC scanning and sending data
+        // Function to handle NFC scanning and display data
         async function handleNFCScan() {
             if ('NDEFReader' in window) {
                 try {
@@ -62,10 +62,10 @@
                             }
                         }
 
-                        // Log scanned NFC tag
+                        // Log scanned NFC tag on the webpage
                         document.getElementById('output').textContent = `NFC Tag scanned: ${messageText}`;
 
-                        // Send the tag (A, B, C, or D) to Google Sheets
+                        // Send the scanned tag to Google Sheets
                         saveScanToGoogleSheets(messageText);
                     };
 
