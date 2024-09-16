@@ -62,26 +62,21 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const datePicker = document.getElementById('datePicker');
             const statusTableBody = document.getElementById('statusTable');
+            const datePicker = document.getElementById('datePicker');
             let scans = JSON.parse(localStorage.getItem('scans')) || {};
 
             datePicker.addEventListener('change', function() {
-                const selectedDate = datePicker.value; // Get selected date in YYYY-MM-DD format
-                renderTable(selectedDate);
+                renderTable(datePicker.value);
             });
 
             function renderTable(date) {
-                statusTableBody.innerHTML = ''; // Clear existing rows
+                statusTableBody.innerHTML = '';
                 const exits = ['A', 'B', 'C', 'D'];
-
-                // Check if there's data for the selected date, if not, initialize empty
                 if (!scans[date]) {
                     scans[date] = {};
                     exits.forEach(exit => scans[date][exit] = {Night: false, Early: false, Late: false});
                 }
-
-                // Render rows based on the selected date
                 exits.forEach(exit => {
                     let row = statusTableBody.insertRow();
                     row.insertCell(0).textContent = date;
@@ -92,22 +87,40 @@
                         let icon = document.createElement('span');
                         icon.className = 'icon ' + (scans[date][exit][period] ? 'scanned' : '');
                         cell.appendChild(icon);
-
-                        // Add onclick event to simulate scanning (replace with real NFC logic if applicable)
-                        icon.onclick = () => {
-                            scans[date][exit][period] = true;
-                            icon.classList.add('scanned');
-                            localStorage.setItem('scans', JSON.stringify(scans));
-                        };
                     });
                 });
             }
 
-            // Initialize today's date or the last selected date
             const today = new Date().toISOString().slice(0, 10);
             datePicker.value = today;
             renderTable(today);
+            setupNFC();
         });
+
+        async function setupNFC() {
+            if ("NDEFReader" in window) {
+                const ndef = new NDEFReader();
+                try {
+                    await ndef.scan();
+                    console.log("NFC Scanning started...");
+                    ndef.onreading = event => {
+                        const tag = event.serialNumber || "";
+                        const exits = ['A', 'B', 'C', 'D'];
+                        const today = new Date().toISOString().slice(0, 10);
+                        
+                        if (exits.includes(tag)) {
+                            scans[today][tag] = {Night: true, Early: true, Late: true}; // Assume scan valid for all periods for demo
+                            localStorage.setItem('scans', JSON.stringify(scans));
+                            renderTable(today);
+                        }
+                    };
+                } catch (error) {
+                    console.error("Error: " + error);
+                }
+            } else {
+                console.log("Web NFC is not supported by this browser.");
+            }
+        }
     </script>
 </body>
 </html>
