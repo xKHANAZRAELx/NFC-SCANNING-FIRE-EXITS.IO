@@ -73,22 +73,22 @@
             function renderTable(date) {
                 statusTableBody.innerHTML = ''; // Clear the table body
                 const exits = ['A', 'B', 'C', 'D'];
-                if (!scans[date]) {
-                    scans[date] = {};
-                    exits.forEach(exit => scans[date][exit] = {Night: false, Early: false, Late: false});
-                }
                 exits.forEach(exit => {
                     let row = statusTableBody.insertRow();
-                    row.insertCell(0).textContent = date;
+                    let dateCell = row.insertCell(0);
+                    dateCell.textContent = date ? date : 'Select Date';
                     row.insertCell(1).textContent = exit;
                     
                     ['Night', 'Early', 'Late'].forEach(period => {
                         let cell = row.insertCell();
                         let icon = document.createElement('span');
-                        icon.className = 'icon ' + (scans[date][exit][period] ? 'scanned' : '');
+                        icon.className = 'icon ' + (scans[date] && scans[date][exit] && scans[date][exit][period] ? 'scanned' : '');
                         cell.appendChild(icon);
                         
+                        // Add click event for testing without actual NFC scanning
                         icon.addEventListener('click', () => {
+                            if (!scans[date]) scans[date] = {};
+                            if (!scans[date][exit]) scans[date][exit] = {};
                             scans[date][exit][period] = true;
                             icon.classList.add('scanned');
                             localStorage.setItem('scans', JSON.stringify(scans));
@@ -98,6 +98,9 @@
             }
 
             setupNFC();
+            const today = new Date().toISOString().slice(0, 10);
+            datePicker.value = today; // Set today's date on picker
+            renderTable(today); // Render today's date by default
         });
 
         async function setupNFC() {
@@ -108,19 +111,16 @@
                     console.log("NFC Scanning started...");
                     ndef.onreading = event => {
                         const tag = event.serialNumber || "";
-                        const exits = ['A', 'B', 'C', 'D'];
                         const selectedDate = datePicker.value || new Date().toISOString().slice(0, 10);
-                        
+                        const exits = ['A', 'B', 'C', 'D'];
                         if (exits.includes(tag)) {
-                            if (!scans[selectedDate]) {
-                                scans[selectedDate] = {};
-                                exits.forEach(exit => scans[selectedDate][exit] = {Night: false, Early: false, Late: false});
-                            }
+                            if (!scans[selectedDate]) scans[selectedDate] = {};
+                            if (!scans[selectedDate][tag]) scans[selectedDate][tag] = {};
                             ['Night', 'Early', 'Late'].forEach(period => {
-                                scans[selectedDate][tag][period] = true; // Set scan status to true
+                                scans[selectedDate][tag][period] = true; // Assume scan is valid for all periods
+                                localStorage.setItem('scans', JSON.stringify(scans));
+                                renderTable(selectedDate); // Update the display
                             });
-                            localStorage.setItem('scans', JSON.stringify(scans));
-                            renderTable(selectedDate); // Update the table display
                         }
                     };
                 } catch (error) {
