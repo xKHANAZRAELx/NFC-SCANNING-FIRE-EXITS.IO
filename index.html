@@ -10,13 +10,22 @@
             text-align: center;
             margin-top: 50px;
         }
-        .icon {
+        .status-icon {
             display: inline-block;
-            width: 100px;
-            height: 100px;
+            width: 20px;
+            height: 20px;
             background-color: red;
             border-radius: 50%;
+        }
+        table {
+            width: 100%;
             margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
         }
         #output {
             font-size: 20px;
@@ -30,8 +39,33 @@
     <p>Place your phone near the NFC tag to scan.</p>
     <div id="output">Waiting for NFC tag...</div>
 
-    <!-- Icon that will change color from red to green when NFC tag is scanned -->
-    <div class="icon" id="nfc-icon"></div>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Night</th>
+                <th>Early</th>
+                <th>Late</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="location-A">
+                <td id="date-A">Awaiting scan...</td>
+                <td>A</td>
+                <td><div class="status-icon" data-type="Night"></div></td>
+                <td><div class="status-icon" data-type="Early"></div></td>
+                <td><div class="status-icon" data-type="Late"></div></td>
+            </tr>
+            <tr id="location-B">
+                <td id="date-B">Awaiting scan...</td>
+                <td>B</td>
+                <td><div class="status-icon" data-type="Night"></div></td>
+                <td><div class="status-icon" data-type="Early"></div></td>
+                <td><div class="status-icon" data-type="Late"></div></td>
+            </tr>
+        </tbody>
+    </table>
 
     <script>
         // Check if the browser supports NFC
@@ -44,9 +78,29 @@
                     document.getElementById('output').textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
 
                     ndef.onreading = event => {
-                        // When NFC tag is scanned, turn the icon green
-                        document.getElementById('nfc-icon').style.backgroundColor = 'green';
-                        document.getElementById('output').textContent = 'NFC Tag scanned!';
+                        const message = event.message;
+                        const decoder = new TextDecoder();
+                        let tagContent = '';
+
+                        for (const record of message.records) {
+                            tagContent += decoder.decode(record.data);
+                        }
+
+                        document.getElementById('output').textContent = `NFC Tag scanned: ${tagContent}`;
+                        const currentDate = new Date().toLocaleString();
+
+                        // Assuming the tag content will be 'A' or 'B'
+                        if (tagContent === 'A' || tagContent === 'B') {
+                            const dateElement = document.getElementById(`date-${tagContent}`);
+                            const locationRow = document.getElementById(`location-${tagContent}`);
+                            const icons = locationRow.querySelectorAll('.status-icon');
+
+                            dateElement.textContent = currentDate; // Update date and time upon scan
+                            // Turn all icons green for the scanned location
+                            icons.forEach(icon => {
+                                icon.style.backgroundColor = 'green';
+                            });
+                        }
                     };
 
                     ndef.onreadingerror = () => {
