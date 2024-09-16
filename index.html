@@ -90,23 +90,29 @@
                     ndef.onreading = event => {
                         const tagData = new TextDecoder().decode(event.message.records[0].data);
                         console.log(`NFC tag data: ${tagData}`);
-                        
-                        const timePeriod = getTimePeriod(new Date());
-                        
-                        // Update scan data for today
-                        let updates = {};
-                        updates[timePeriod] = true;
-                        database.ref(`scans/${today}/${tagData}`).update(updates);
+
+                        // Check if the tag data exists in the Firebase database
+                        database.ref(`scans/${today}/${tagData}`).once('value', function(snapshot) {
+                            if (snapshot.exists()) {
+                                const timePeriod = getTimePeriod(new Date());
+                                let updates = {};
+                                updates[timePeriod] = true;
+                                database.ref(`scans/${today}/${tagData}`).update(updates);
+                                document.getElementById('error-message').textContent = ''; // Clear error message if the tag is valid
+                            } else {
+                                document.getElementById('error-message').textContent = `Error: NFC tag "${tagData}" not recognized or not added to the system.`;
+                            }
+                        });
                     };
 
                     ndef.onreadingerror = () => {
-                        console.error("Error: Cannot read data from the NFC tag.");
+                        document.getElementById('error-message').textContent = 'Error: Cannot read data from the NFC tag.';
                     };
                 } catch (error) {
-                    console.error("Error starting NFC scan:", error);
+                    document.getElementById('error-message').textContent = `Error starting NFC scan: ${error.message}`;
                 }
             } else {
-                console.error("This browser does not support Web NFC.");
+                document.getElementById('error-message').textContent = 'Error: This browser does not support Web NFC.';
             }
         }
 
@@ -172,6 +178,11 @@
             background-color: transparent;
             cursor: pointer;
         }
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -179,6 +190,10 @@
     <div class="admin-link">
         <a href="admin.html">Go to Admin Page</a>
     </div>
+
+    <!-- Error message display -->
+    <div id="error-message" class="error-message"></div>
+
     <table>
         <thead>
             <tr>
