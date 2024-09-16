@@ -157,55 +157,93 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #ffffff;
+            background-color: #f9f9f9;
             color: #333;
+            margin: 0;
+            padding: 0;
         }
+    
         h1 {
             text-align: center;
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            margin: 0;
+            font-size: 24px;
         }
+    
+        .admin-link {
+            text-align: right;
+            margin: 20px 20px 0 0;
+        }
+    
+        .admin-link a {
+            text-decoration: none;
+            color: #fff;
+            background-color: #333;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+    
+        .admin-link a:hover {
+            background-color: #555;
+        }
+    
         table {
-            width: 100%;
+            width: 80%;
+            margin: 20px auto;
             border-collapse: collapse;
-            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+    
         th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
+            padding: 15px;
             text-align: center;
+            border: 1px solid #ddd;
         }
+    
         th {
-            background-color: #f2f2f2;
+            background-color: #333;
+            color: #fff;
+            font-size: 18px;
         }
+    
+        td {
+            background-color: #fff;
+            color: #333;
+            font-size: 16px;
+        }
+    
         .icon {
-            font-size: 20px;
+            font-size: 24px;
         }
+    
         .red {
             color: red;
         }
+    
         .green {
             color: green;
         }
-        .admin-link {
-            text-align: right;
-            margin-top: 20px;
-        }
-        .admin-link a {
-            text-decoration: none;
-            color: #007bff;
-            font-weight: bold;
-        }
+    
         #datePicker {
-            font-size: 18px;
-            border: none;
-            background-color: transparent;
-            cursor: pointer;
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
         }
+    
         .scan-message {
             text-align: center;
             font-size: 18px;
             margin-top: 20px;
+            font-weight: bold;
         }
-    </style>
+    </style>    
 </head>
 <body>
     <h1>Fire Exit Monitoring Dashboard</h1>
