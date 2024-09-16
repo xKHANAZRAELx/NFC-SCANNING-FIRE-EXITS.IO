@@ -32,7 +32,6 @@
                 for (let date in data) {
                     if (date !== today) {
                         for (let location in data[date]) {
-                            // Reset Night, Early, Late statuses to false for the new day
                             let resetStatus = { night: false, early: false, late: false };
                             database.ref(`scans/${today}/${location}`).set(resetStatus);
                         }
@@ -52,7 +51,6 @@
                 const dataSize = JSON.stringify(data).length; // Approximate size of the data
                 const dataLimit = 900 * 1024 * 1024; // 900 MB limit for safety
 
-                // If we're approaching the data limit, remove data older than 6 months
                 if (dataSize >= dataLimit) {
                     for (let date in data) {
                         if (date < sixMonthsAgo) {
@@ -119,7 +117,7 @@
                                 document.getElementById('scan-message').textContent = 'Accepted'; // Show accepted message
                                 document.getElementById('scan-message').style.color = 'green'; // Green message for success
                             } else {
-                                document.getElementById('scan-message').textContent = `Error: NFC tag "${tagData}" not recognized.`;
+                                document.getElementById('scan-message').textContent = `Error: NFC tag "${tagData}" not recognized or not in database.`; // Updated message for unrecognized tag
                                 document.getElementById('scan-message').style.color = 'red'; // Red message for error
                             }
                         });
@@ -234,4 +232,3 @@
     </table>
 </body>
 </html>
-
