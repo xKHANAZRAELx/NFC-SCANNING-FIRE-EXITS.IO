@@ -23,6 +23,8 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        const today = new Date().toISOString().slice(0, 10); // Current date
+
         // Simple password authentication
         function checkPassword() {
             const password = document.getElementById('password').value;
@@ -39,12 +41,12 @@
         function addLocation() {
             const locationName = document.getElementById('locationName').value;
             if (locationName) {
-                database.ref('locations/' + locationName).set({
+                database.ref(`scans/${today}/${locationName}`).set({
                     night: false,
                     early: false,
                     late: false
                 }).then(() => {
-                    window.location.href = "index.html";
+                    window.location.href = "index.html"; // Redirect to index after adding location
                 });
             }
         }
@@ -52,13 +54,13 @@
         // Function to remove an existing location
         function removeLocation(locationName) {
             if (locationName) {
-                database.ref('locations/' + locationName).remove();
+                database.ref(`scans/${today}/${locationName}`).remove();
             }
         }
 
-        // Function to fetch and display existing locations
+        // Function to fetch and display existing locations for today
         function fetchLocations() {
-            const locationsRef = database.ref('locations');
+            const locationsRef = database.ref(`scans/${today}`);
             locationsRef.on('value', function(snapshot) {
                 const locations = snapshot.val();
                 const locationList = document.getElementById('locationList');
@@ -126,7 +128,7 @@
         <input type="text" id="locationName" placeholder="Enter new location">
         <button onclick="addLocation()">Add Location</button>
 
-        <h2>Existing Locations</h2>
+        <h2>Existing Locations for Today</h2>
         <div id="locationList">
             <!-- Existing locations will be dynamically added here -->
         </div>
