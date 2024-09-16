@@ -3,96 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login</title>
+    <title>Admin Panel</title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
+            font-family: Arial, sans-serif;
             text-align: center;
-            padding: 50px;
+            margin-top: 50px;
+            background-color: #f4f4f4;
+            color: #333;
         }
-        h1 {
-            color: #1f78d1;
-            margin-bottom: 30px;
-            font-size: 32px;
-        }
-        input[type="password"], input[type="text"] {
+        input, button {
             padding: 10px;
-            font-size: 16px;
-            margin: 10px 0;
-            width: 250px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
+            margin-top: 20px;
+            margin-bottom: 10px;
         }
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            background-color: #1f78d1;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #155a9a;
-        }
-        .hidden {
+        #adminSection {
             display: none;
+        }
+        .deleteBtn {
+            color: red;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-
-    <h1>Admin Login</h1>
-    <form id="login-form">
-        <input type="password" id="password" placeholder="Enter password">
-        <button type="submit">Login</button>
-    </form>
-
-    <div id="admin-section" class="hidden">
-        <h2>Add New Location</h2>
-        <form id="add-location-form">
-            <input type="text" id="new-location" placeholder="Enter new location (e.g., C, D)">
-            <button type="submit">Add Location</button>
-        </form>
+    <div id="loginSection">
+        <h1>Admin Login</h1>
+        <input type="password" id="passwordInput" placeholder="Enter password"/>
+        <button onclick="login()">Login</button>
+    </div>
+    
+    <div id="adminSection">
+        <h1>Admin Panel</h1>
+        <input type="text" id="newLocation" placeholder="Enter new location"/>
+        <button onclick="addLocation()">Add Location</button>
+        <h2>Locations:</h2>
+        <ul id="locationList"></ul>
     </div>
 
     <script>
-        const correctPassword = "admin123";  // Admin password
-
-        // Handle login form submission
-        document.getElementById('login-form').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const password = document.getElementById('password').value;
-
-            if (password === correctPassword) {
-                document.getElementById('login-form').classList.add('hidden');
-                document.getElementById('admin-section').classList.remove('hidden');
+        function login() {
+            var password = document.getElementById('passwordInput').value;
+            if(password === "123") {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminSection').style.display = 'block';
+                loadLocations();
             } else {
-                alert('Incorrect password!');
+                alert('Incorrect password, please try again!');
             }
-        });
+        }
 
-        // Handle adding new locations to localStorage
-        document.getElementById('add-location-form').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const newLocation = document.getElementById('new-location').value.trim();
-
-            if (newLocation) {
-                let locations = JSON.parse(localStorage.getItem('locations')) || [];
-                locations.push(newLocation);
-                localStorage.setItem('locations', JSON.stringify(locations));
-
-                alert(`Location ${newLocation} added successfully!`);
-
-                // Redirect to index.html after adding the location
-                window.location.href = 'index.html';
+        function addLocation() {
+            var location = document.getElementById('newLocation').value.trim();
+            if(location) {
+                var locations = JSON.parse(localStorage.getItem('locations')) || [];
+                if(!locations.includes(location)) { // Avoid adding duplicates
+                    locations.push(location);
+                    localStorage.setItem('locations', JSON.stringify(locations));
+                    displayLocations();
+                    document.getElementById('newLocation').value = ''; // Clear the input after adding
+                }
             }
-        });
+        }
+
+        function loadLocations() {
+            displayLocations();
+        }
+
+        function displayLocations() {
+            var locations = JSON.parse(localStorage.getItem('locations')) || [];
+            var locationList = document.getElementById('locationList');
+            locationList.innerHTML = '';
+            locations.forEach(function(location, index) {
+                var li = document.createElement('li');
+                li.textContent = location;
+                var deleteBtn = document.createElement('span');
+                deleteBtn.textContent = ' Delete';
+                deleteBtn.classList.add('deleteBtn');
+                deleteBtn.onclick = function() { deleteLocation(index); };
+                li.appendChild(deleteBtn);
+                locationList.appendChild(li);
+            });
+        }
+
+        function deleteLocation(index) {
+            var locations = JSON.parse(localStorage.getItem('locations')) || [];
+            locations.splice(index, 1); // Remove the location from the array
+            localStorage.setItem('locations', JSON.stringify(locations));
+            displayLocations(); // Update the display
+        }
+
+        window.addEventListener('load', loadLocations);
     </script>
-
 </body>
 </html>

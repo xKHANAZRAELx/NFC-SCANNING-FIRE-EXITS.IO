@@ -133,6 +133,21 @@
             document.getElementById('output').textContent = 'NFC scanning is not supported on this device.';
         }
     </script>
-
+    <script>
+        window.addEventListener('load', function() {
+            var locations = JSON.parse(localStorage.getItem('locations')) || [];
+            var locationTableBody = document.querySelector('table tbody');
+            locations.forEach(function(location) {
+                var row = document.createElement('tr');
+                row.innerHTML = `<td>Today's Date</td>
+                                 <td>${location}</td>
+                                 <td><div class="status-icon" data-type="Night"></div></td>
+                                 <td><div class="status-icon" data-type="Early"></div></td>
+                                 <td><div class="status-icon" data-type="Late"></div></td>`;
+                locationTableBody.appendChild(row);
+            });
+        });
+    </script>
+    
 </body>
 </html>
