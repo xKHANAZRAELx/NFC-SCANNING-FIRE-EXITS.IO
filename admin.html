@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin - Fire Exit Monitoring</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <script>
         // Firebase configuration
         const firebaseConfig = {
@@ -23,177 +28,178 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        const today = new Date().toISOString().slice(0, 10); // Current date
-
-        // Simple password authentication
-        function checkPassword() {
-            const password = document.getElementById('password').value;
-            if (password === '123') {
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                fetchLocations(); // Fetch locations after login
+        // Admin Login Logic
+        function loginAdmin() {
+            const password = document.getElementById("admin-password").value;
+            if (password === "123") {
+                document.getElementById("login-section").style.display = "none";
+                document.getElementById("admin-section").style.display = "block";
             } else {
-                alert('Incorrect password, please try again.');
+                alert("Incorrect Password");
             }
         }
 
-        // Function to add a new location
+        // Function to add new location
         function addLocation() {
-            const locationName = document.getElementById('locationName').value;
+            const locationName = document.getElementById("location-name").value;
+            const today = new Date().toISOString().slice(0, 10);
+
             if (locationName) {
-                database.ref(`scans/${today}/${locationName}`).set({
-                    night: false,
-                    early: false,
-                    late: false
-                }).then(() => {
-                    window.location.href = "index.html"; // Redirect to index after adding location
-                });
+                const locationRef = database.ref(`scans/${today}/${locationName}`);
+                locationRef.set({ night: false, early: false, late: false });
+                document.getElementById("location-name").value = '';
+                fetchLocations(); // Refresh location list after adding
+            } else {
+                alert("Location name cannot be empty.");
             }
         }
 
-        // Function to remove an existing location
-        function removeLocation(locationName) {
-            if (locationName) {
-                database.ref(`scans/${today}/${locationName}`).remove();
-            }
-        }
-
-        // Function to fetch and display existing locations for today
+        // Function to fetch and display locations
         function fetchLocations() {
+            const today = new Date().toISOString().slice(0, 10);
             const locationsRef = database.ref(`scans/${today}`);
-            locationsRef.on('value', function(snapshot) {
-                const locations = snapshot.val();
-                const locationList = document.getElementById('locationList');
-                locationList.innerHTML = ''; // Clear the existing list
-                if (locations) {
-                    for (let location in locations) {
-                        const listItem = document.createElement('div');
-                        listItem.classList.add('location-item');
-                        listItem.innerHTML = `
-                            <span>${location}</span>
-                            <button onclick="removeLocation('${location}')">Remove</button>
-                        `;
+
+            locationsRef.once('value', function(snapshot) {
+                const data = snapshot.val();
+                const locationList = document.getElementById("location-list");
+                locationList.innerHTML = ''; // Clear the list
+
+                if (data) {
+                    for (let location in data) {
+                        const listItem = document.createElement("li");
+                        listItem.className = "list-group-item d-flex justify-content-between align-items-center";
+                        listItem.innerHTML = `${location}
+                            <button class="btn btn-danger btn-sm" onclick="deleteLocation('${location}')">Delete</button>`;
                         locationList.appendChild(listItem);
                     }
-                } else {
-                    locationList.innerHTML = '<p>No locations available.</p>';
                 }
             });
         }
 
-        // Hide admin panel initially
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('adminPanel').style.display = 'none';
+        // Function to delete location
+        function deleteLocation(location) {
+            const today = new Date().toISOString().slice(0, 10);
+            const locationRef = database.ref(`scans/${today}/${location}`);
+            locationRef.remove();
+            fetchLocations(); // Refresh location list after deletion
+        }
+
+        // Initialize page
+        document.addEventListener("DOMContentLoaded", function() {
+            fetchLocations(); // Fetch existing locations on page load
         });
     </script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f9f9f9;
             color: #333;
-            margin: 0;
-            padding: 0;
         }
-    
         h1 {
             text-align: center;
             background-color: #333;
             color: #fff;
             padding: 20px;
-            margin: 0;
-            font-size: 24px;
+            margin-bottom: 20px;
         }
-    
-        .admin-form {
-            width: 60%;
-            margin: 40px auto;
+
+        .login-section, .admin-section {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
             padding: 20px;
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-    
-        .admin-form input[type="password"],
-        .admin-form input[type="text"] {
+
+        .login-section input[type="password"] {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
+            margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 16px;
         }
-    
-        .admin-form button {
+
+        .login-section button {
             width: 100%;
             padding: 10px;
             background-color: #333;
             color: #fff;
             border: none;
             border-radius: 4px;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
-    
-        .admin-form button:hover {
+
+        .login-section button:hover {
             background-color: #555;
         }
-    
-        .location-list {
-            margin-top: 20px;
+
+        .admin-section {
+            display: none;
         }
-    
-        .location-item {
+
+        .admin-section input[type="text"] {
+            width: 100%;
             padding: 10px;
-            background-color: #fff;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
             border-radius: 4px;
         }
-    
-        .location-item span {
-            font-size: 18px;
-            font-weight: bold;
-        }
-    
-        .location-item button {
-            padding: 5px 10px;
-            background-color: red;
+
+        .admin-section button {
+            width: 100%;
+            padding: 10px;
+            background-color: #333;
             color: #fff;
             border: none;
             border-radius: 4px;
+            font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
-    
-        .location-item button:hover {
-            background-color: darkred;
+
+        .admin-section button:hover {
+            background-color: #555;
+        }
+
+        .list-group-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
         }
     </style>
-    
 </head>
 <body>
-    <h1>Admin Dashboard</h1>
+    <h1>Admin - Fire Exit Monitoring</h1>
 
-    <!-- Login Form -->
-    <div id="loginForm">
-        <input type="password" id="password" placeholder="Enter Password">
-        <button onclick="checkPassword()">Login</button>
+    <!-- Admin Login Section -->
+    <div id="login-section" class="login-section">
+        <h3 class="text-center">Admin Login</h3>
+        <input type="password" id="admin-password" placeholder="Enter password" />
+        <button onclick="loginAdmin()">Login</button>
     </div>
 
-    <!-- Admin Panel (hidden until logged in) -->
-    <div id="adminPanel" style="display:none;">
-        <input type="text" id="locationName" placeholder="Enter new location">
+    <!-- Admin Section -->
+    <div id="admin-section" class="admin-section">
+        <h3 class="text-center">Manage Locations</h3>
+        <input type="text" id="location-name" placeholder="Enter location name" />
         <button onclick="addLocation()">Add Location</button>
 
-        <h2>Existing Locations for Today</h2>
-        <div id="locationList">
-            <!-- Existing locations will be dynamically added here -->
-        </div>
+        <h4 class="mt-4">Existing Locations:</h4>
+        <ul id="location-list" class="list-group">
+            <!-- Existing locations will be listed here -->
+        </ul>
     </div>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
