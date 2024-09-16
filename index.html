@@ -3,151 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Tag Scanner</title>
+    <title>Fire Exit Monitoring Dashboard</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
             color: #333;
-        }
-        .status-icon {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            background-color: red;
-            border-radius: 50%;
         }
         table {
             width: 100%;
-            margin-top: 20px;
             border-collapse: collapse;
-            background-color: white;
-            color: black;
         }
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            border: 1px solid #ccc;
+            padding: 10px;
             text-align: center;
         }
-        #output {
-            font-size: 20px;
-            margin-top: 20px;
+        th {
+            background-color: #eaeaea;
+            color: #333;
         }
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #333;
-            color: white;
+        .icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #ff6347; /* Tomato red for unscanned */
+        }
+        .scanned {
+            background-color: #32cd32; /* Lime green for scanned */
+        }
+        .date-picker {
             border: none;
+            background: none;
             cursor: pointer;
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
-
-    <h1>NFC Tag Scanner</h1>
-    <p>Place your phone near the NFC tag to scan.</p>
-    <div id="output">Waiting for NFC tag...</div>
-
-    <button onclick="window.location.href='admin.html';">Admin Panel</button>
-
+    <h1>Fire Exit Scan Status</h1>
     <table>
         <thead>
             <tr>
-                <th>Date</th>
+                <th>Date <input type="date" id="datePicker" class="date-picker"></th>
                 <th>Location</th>
                 <th>Night</th>
                 <th>Early</th>
                 <th>Late</th>
             </tr>
         </thead>
-        <tbody>
-            <tr id="location-A">
-                <td id="date-A">Awaiting scan...</td>
-                <td>A</td>
-                <td><div class="status-icon" data-type="Night"></div></td>
-                <td><div class="status-icon" data-type="Early"></div></td>
-                <td><div class="status-icon" data-type="Late"></div></td>
-            </tr>
-            <tr id="location-B">
-                <td id="date-B">Awaiting scan...</td>
-                <td>B</td>
-                <td><div class="status-icon" data-type="Night"></div></td>
-                <td><div class="status-icon" data-type="Early"></div></td>
-                <td><div class="status-icon" data-type="Late"></div></td>
-            </tr>
+        <tbody id="statusTable">
+            <!-- Rows will be dynamically added here -->
         </tbody>
     </table>
 
     <script>
-        // Check if the browser supports NFC
-        if ('NDEFReader' in window) {
-            const ndef = new NDEFReader();
+        document.addEventListener('DOMContentLoaded', function() {
+            const datePicker = document.getElementById('datePicker');
+            const statusTableBody = document.getElementById('statusTable');
+            let scans = JSON.parse(localStorage.getItem('scans')) || {};
 
-            async function scanNFC() {
-                try {
-                    await ndef.scan();
-                    document.getElementById('output').textContent = 'NFC scanning started. Bring the NFC tag close to your device.';
+            datePicker.addEventListener('change', function() {
+                const selectedDate = datePicker.value; // Get selected date in YYYY-MM-DD format
+                renderTable(selectedDate);
+            });
 
-                    ndef.onreading = event => {
-                        const message = event.message;
-                        const decoder = new TextDecoder();
-                        let tagContent = '';
+            function renderTable(date) {
+                statusTableBody.innerHTML = ''; // Clear existing rows
+                const exits = ['A', 'B', 'C', 'D'];
 
-                        for (const record of message.records) {
-                            tagContent += decoder.decode(record.data);
-                        }
-
-                        document.getElementById('output').textContent = `NFC Tag scanned: ${tagContent}`;
-                        const currentDate = new Date().toLocaleString();
-
-                        // Assuming the tag content will be 'A' or 'B'
-                        if (tagContent === 'A' || tagContent === 'B') {
-                            const dateElement = document.getElementById(`date-${tagContent}`);
-                            const locationRow = document.getElementById(`location-${tagContent}`);
-                            const icons = locationRow.querySelectorAll('.status-icon');
-
-                            dateElement.textContent = currentDate; // Update date and time upon scan
-                            // Turn all icons green for the scanned location
-                            icons.forEach(icon => {
-                                icon.style.backgroundColor = 'green';
-                            });
-                        }
-                    };
-
-                    ndef.onreadingerror = () => {
-                        document.getElementById('output').textContent = 'Failed to read NFC tag. Try again.';
-                    };
-                } catch (error) {
-                    document.getElementById('output').textContent = `Error: ${error.message}`;
+                // Check if there's data for the selected date, if not, initialize empty
+                if (!scans[date]) {
+                    scans[date] = {};
+                    exits.forEach(exit => scans[date][exit] = {Night: false, Early: false, Late: false});
                 }
+
+                // Render rows based on the selected date
+                exits.forEach(exit => {
+                    let row = statusTableBody.insertRow();
+                    row.insertCell(0).textContent = date;
+                    row.insertCell(1).textContent = exit;
+                    
+                    ['Night', 'Early', 'Late'].forEach(period => {
+                        let cell = row.insertCell();
+                        let icon = document.createElement('span');
+                        icon.className = 'icon ' + (scans[date][exit][period] ? 'scanned' : '');
+                        cell.appendChild(icon);
+
+                        // Add onclick event to simulate scanning (replace with real NFC logic if applicable)
+                        icon.onclick = () => {
+                            scans[date][exit][period] = true;
+                            icon.classList.add('scanned');
+                            localStorage.setItem('scans', JSON.stringify(scans));
+                        };
+                    });
+                });
             }
 
-            // Start NFC scan when page is loaded
-            window.addEventListener('load', scanNFC);
-
-        } else {
-            document.getElementById('output').textContent = 'NFC scanning is not supported on this device.';
-        }
-    </script>
-    <script>
-        window.addEventListener('load', function() {
-            var locations = JSON.parse(localStorage.getItem('locations')) || [];
-            var locationTableBody = document.querySelector('table tbody');
-            locations.forEach(function(location) {
-                var row = document.createElement('tr');
-                row.innerHTML = `<td>Today's Date</td>
-                                 <td>${location}</td>
-                                 <td><div class="status-icon" data-type="Night"></div></td>
-                                 <td><div class="status-icon" data-type="Early"></div></td>
-                                 <td><div class="status-icon" data-type="Late"></div></td>`;
-                locationTableBody.appendChild(row);
-            });
+            // Initialize today's date or the last selected date
+            const today = new Date().toISOString().slice(0, 10);
+            datePicker.value = today;
+            renderTable(today);
         });
     </script>
-    
 </body>
 </html>
