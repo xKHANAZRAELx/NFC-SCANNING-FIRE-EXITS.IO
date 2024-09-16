@@ -114,10 +114,12 @@
                                 let updates = {};
                                 updates[timePeriod] = true;
                                 database.ref(`scans/${today}/${tagData}`).update(updates);
+
                                 document.getElementById('scan-message').textContent = 'Accepted'; // Show accepted message
                                 document.getElementById('scan-message').style.color = 'green'; // Green message for success
+                                setTimeout(() => { document.getElementById('scan-message').textContent = ''; }, 3000); // Clear message after 3 seconds
                             } else {
-                                document.getElementById('scan-message').textContent = `Error: NFC tag "${tagData}" not recognized or not in database.`; // Updated message for unrecognized tag
+                                document.getElementById('scan-message').textContent = `Error: NFC tag "${tagData}" not recognized or not in database.`; // Error message for unrecognized tag
                                 document.getElementById('scan-message').style.color = 'red'; // Red message for error
                             }
                         });
@@ -157,26 +159,21 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
+            background-color: #ffffff;
             color: #333;
-            margin: 0;
-            padding: 0;
         }
-    
         h1 {
             text-align: center;
             background-color: #333;
             color: #fff;
             padding: 20px;
-            margin: 0;
-            font-size: 24px;
         }
-    
+
         .admin-link {
             text-align: right;
-            margin: 20px 20px 0 0;
+            margin: 20px;
         }
-    
+
         .admin-link a {
             text-decoration: none;
             color: #fff;
@@ -184,51 +181,50 @@
             padding: 10px 20px;
             border-radius: 4px;
             font-weight: bold;
-            display: inline-block;
             transition: background-color 0.3s;
         }
-    
+
         .admin-link a:hover {
             background-color: #555;
         }
-    
+
         table {
             width: 80%;
             margin: 20px auto;
             border-collapse: collapse;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-    
+
         th, td {
             padding: 15px;
             text-align: center;
             border: 1px solid #ddd;
         }
-    
+
         th {
             background-color: #333;
             color: #fff;
             font-size: 18px;
         }
-    
+
         td {
             background-color: #fff;
             color: #333;
             font-size: 16px;
         }
-    
+
         .icon {
             font-size: 24px;
         }
-    
+
         .red {
             color: red;
         }
-    
+
         .green {
             color: green;
         }
-    
+
         #datePicker {
             font-size: 16px;
             padding: 10px;
@@ -236,14 +232,15 @@
             border-radius: 4px;
             width: 200px;
         }
-    
+
         .scan-message {
             text-align: center;
             font-size: 18px;
             margin-top: 20px;
             font-weight: bold;
+            transition: opacity 0.3s ease;
         }
-    </style>    
+    </style>
 </head>
 <body>
     <h1>Fire Exit Monitoring Dashboard</h1>
@@ -270,3 +267,4 @@
     </table>
 </body>
 </html>
+
