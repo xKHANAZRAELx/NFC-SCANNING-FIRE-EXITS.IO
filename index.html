@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDj2uosWcsHdGWm31_w_5LJ-i34IGZY_us",
             authDomain: "nfc-scan-tracker.firebaseapp.com",
@@ -22,19 +23,19 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Function to display the status of locations for the selected date
+        // Function to display all locations' scan status for the selected date
         function updateStatusDisplay(date) {
             const locationsRef = database.ref(`scans/${date}`);
             locationsRef.on('value', function(snapshot) {
                 const data = snapshot.val();
                 const statusTable = document.getElementById('status-table-body');
-                statusTable.innerHTML = ''; // Clear previous table data
+                statusTable.innerHTML = ''; // Clear previous data
                 if (data) {
                     for (let location in data) {
                         const locData = data[location];
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td><input type="date" id="datePicker" value="${date}" onchange="updateDate()" style="border:none;"></td>
+                            <td><input type="date" id="datePicker" onchange="updateDate()" style="border:none;"></td>
                             <td>${location}</td>
                             <td><span class="icon ${locData.night ? 'green' : 'red'}">●</span></td>
                             <td><span class="icon ${locData.early ? 'green' : 'red'}">●</span></td>
@@ -48,15 +49,15 @@
             });
         }
 
-        // Function to handle date change and update the table accordingly
+        // Function to handle date change and display logs for the selected date
         function updateDate() {
             const selectedDate = document.getElementById('datePicker').value;
             updateStatusDisplay(selectedDate); // Fetch logs for the selected date
         }
 
-        // Function to handle NFC scanning and update the database for today
+        // Function to handle NFC scanning and update the database for today's date
         async function setupNFC() {
-            const today = new Date().toISOString().slice(0, 10); // Today's date (YYYY-MM-DD)
+            const today = new Date().toISOString().slice(0, 10); // Get today's date
             if ('NDEFReader' in window) {
                 const ndef = new NDEFReader();
                 try {
@@ -94,11 +95,11 @@
             return 'late';
         }
 
-        // Initialize the page on load
+        // Initialize the page with the latest available data for today's date
         document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date().toISOString().slice(0, 10); // Today's date (YYYY-MM-DD)
+            const today = new Date().toISOString().slice(0, 10); // Get today's date
             setupNFC();
-            updateStatusDisplay(today); // Display today's logs by default
+            updateStatusDisplay(today); // Show today's logs by default
         });
     </script>
     <style>
