@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Scan Tracker</title>
+    <title>Fire Exit Monitoring</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
@@ -23,44 +23,89 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // Function to listen for database changes and update UI
+        function updateStatusDisplay() {
+            const locationsRef = database.ref('locations');
+            locationsRef.on('value', function(snapshot) {
+                const data = snapshot.val();
+                const statusContainer = document.getElementById('status-container');
+                statusContainer.innerHTML = ''; // Clear previous contents
+                for (let location in data) {
+                    const locData = data[location];
+                    const locElement = document.createElement('div');
+                    locElement.innerHTML = `<strong>${location}</strong>: ` +
+                        `Night (<span class="icon ${locData.night ? 'green' : 'red'}">●</span>), ` +
+                        `Early (<span class="icon ${locData.early ? 'green' : 'red'}">●</span>), ` +
+                        `Late (<span class="icon ${locData.late ? 'green' : 'red'}">●</span>)`;
+                    statusContainer.appendChild(locElement);
+                }
+            });
+        }
+
+        // Function to handle NFC tag scanning
         async function setupNFC() {
             if ('NDEFReader' in window) {
                 const ndef = new NDEFReader();
-                await ndef.scan();
-                console.log("NFC scanning started...");
+                try {
+                    await ndef.scan();
+                    console.log("NFC scanning started...");
 
-                ndef.onreading = event => {
-                    const tagData = new TextDecoder().decode(event.message.records[0].data);
-                    console.log(`NFC tag data: ${tagData}`);
-                    handleNFCData(tagData);
-                };
+                    ndef.onreading = event => {
+                        const tagData = new TextDecoder().decode(event.message.records[0].data);
+                        console.log(`NFC tag data: ${tagData}`);
+                        
+                        // Assuming the tagData is 'A', 'B', or 'C', update the corresponding location
+                        const now = new Date();
+                        const timePeriod = getTimePeriod(now); // Function to get whether it's Night, Early, or Late
 
-                ndef.onreadingerror = () => {
-                    console.error("Error: Cannot read data from the NFC tag.");
-                };
+                        if (['A', 'B', 'C'].includes(tagData)) {
+                            let updates = {};
+                            updates[timePeriod] = true;
+                            database.ref(`locations/${tagData}`).update(updates);
+                        }
+                    };
+
+                    ndef.onreadingerror = () => {
+                        console.error("Error: Cannot read data from the NFC tag.");
+                    };
+                } catch (error) {
+                    console.error("Error starting NFC scan:", error);
+                }
             } else {
                 console.error("This browser does not support Web NFC.");
             }
         }
 
-        function handleNFCData(nfcData) {
-            const ref = database.ref('nfc_scans');
-            ref.push({
-                nfcData: nfcData,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-            updateDisplay(nfcData);
+        // Helper function to determine if it's Night, Early, or Late
+        function getTimePeriod(date) {
+            const hour = date.getHours();
+            if (hour >= 0 && hour < 6) return 'night';
+            if (hour >= 6 && hour < 12) return 'early';
+            return 'late';
         }
 
-        function updateDisplay(nfcData) {
-            document.getElementById('scan-results').textContent = `Scanned NFC Data: ${nfcData}`;
-        }
-
-        document.addEventListener('DOMContentLoaded', setupNFC);
+        // Run the NFC setup and update display on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setupNFC();
+            updateStatusDisplay();
+        });
     </script>
+    <style>
+        .icon {
+            font-size: larger;
+        }
+        .red {
+            color: red;
+        }
+        .green {
+            color: green;
+        }
+    </style>
 </head>
 <body>
-    <h1>NFC Scan Tracker</h1>
-    <div id="scan-results">Waiting for scan...</div>
+    <h1>Fire Exit Monitoring Dashboard</h1>
+    <div id="status-container">
+        <!-- Location status will be dynamically added here -->
+    </div>
 </body>
 </html>
