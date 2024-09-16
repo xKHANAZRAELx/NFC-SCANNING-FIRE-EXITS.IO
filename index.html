@@ -31,6 +31,7 @@
             height: 20px;
             border-radius: 50%;
             background-color: #ff6347; /* Tomato red for unscanned */
+            cursor: pointer;
         }
         .scanned {
             background-color: #32cd32; /* Lime green for scanned */
@@ -48,7 +49,7 @@
     <table>
         <thead>
             <tr>
-                <th><input type="date" id="datePicker" class="date-picker" placeholder="Select Date"></th>
+                <th>Date <input type="date" id="datePicker" class="date-picker"></th>
                 <th>Location</th>
                 <th>Night</th>
                 <th>Early</th>
@@ -75,24 +76,16 @@
                 const exits = ['A', 'B', 'C', 'D'];
                 exits.forEach(exit => {
                     let row = statusTableBody.insertRow();
-                    let dateCell = row.insertCell(0);
-                    dateCell.textContent = date ? date : 'Select Date';
+                    row.insertCell(0).textContent = date ? date : 'Select Date';
                     row.insertCell(1).textContent = exit;
-                    
+
                     ['Night', 'Early', 'Late'].forEach(period => {
                         let cell = row.insertCell();
                         let icon = document.createElement('span');
                         icon.className = 'icon ' + (scans[date] && scans[date][exit] && scans[date][exit][period] ? 'scanned' : '');
+                        icon.dataset.exit = exit;
+                        icon.dataset.period = period;
                         cell.appendChild(icon);
-                        
-                        // Add click event for testing without actual NFC scanning
-                        icon.addEventListener('click', () => {
-                            if (!scans[date]) scans[date] = {};
-                            if (!scans[date][exit]) scans[date][exit] = {};
-                            scans[date][exit][period] = true;
-                            icon.classList.add('scanned');
-                            localStorage.setItem('scans', JSON.stringify(scans));
-                        });
                     });
                 });
             }
@@ -110,17 +103,20 @@
                     await ndef.scan();
                     console.log("NFC Scanning started...");
                     ndef.onreading = event => {
-                        const tag = event.serialNumber || "";
+                        const tag = new TextDecoder().decode(event.message.records[0].data);
                         const selectedDate = datePicker.value || new Date().toISOString().slice(0, 10);
                         const exits = ['A', 'B', 'C', 'D'];
+
                         if (exits.includes(tag)) {
                             if (!scans[selectedDate]) scans[selectedDate] = {};
-                            if (!scans[selectedDate][tag]) scans[selectedDate][tag] = {};
+                            if (!scans[selectedDate][tag]) scans[selectedDate][tag] = {Night: false, Early: false, Late: false};
+
                             ['Night', 'Early', 'Late'].forEach(period => {
-                                scans[selectedDate][tag][period] = true; // Assume scan is valid for all periods
-                                localStorage.setItem('scans', JSON.stringify(scans));
-                                renderTable(selectedDate); // Update the display
+                                scans[selectedDate][tag][period] = true;
+                                updateIcon(selectedDate, tag, period);
                             });
+
+                            localStorage.setItem('scans', JSON.stringify(scans));
                         }
                     };
                 } catch (error) {
@@ -128,6 +124,18 @@
                 }
             } else {
                 console.log("Web NFC is not supported by this browser.");
+            }
+        }
+
+        function updateIcon(date, exit, period) {
+            // Only update icons for the currently selected date to avoid unnecessary DOM manipulation
+            if (date === datePicker.value) {
+                const icons = document.querySelectorAll(`.icon[data-exit="${exit}"][data-period="${period}"]`);
+                if (icons.length > 0) {
+                    icons.forEach(icon => {
+                        icon.className = 'icon scanned';
+                    });
+                }
             }
         }
     </script>
