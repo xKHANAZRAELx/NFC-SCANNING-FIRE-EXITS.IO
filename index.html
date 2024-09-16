@@ -7,7 +7,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
-        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDj2uosWcsHdGWm31_w_5LJ-i34IGZY_us",
             authDomain: "nfc-scan-tracker.firebaseapp.com",
@@ -23,19 +22,21 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        const today = new Date().toISOString().slice(0, 10); // Today's date (YYYY-MM-DD)
+        const yesterday = new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().slice(0, 10); // Yesterday's date
+
         // Function to display the current status of locations
-        function updateStatusDisplay() {
-            const locationsRef = database.ref('locations');
+        function updateStatusDisplay(date) {
+            const locationsRef = database.ref(`scans/${date}`);
             locationsRef.on('value', function(snapshot) {
                 const data = snapshot.val();
                 const statusTable = document.getElementById('status-table-body');
                 statusTable.innerHTML = ''; // Clear previous table data
-                const today = new Date().toISOString().slice(0, 10);
                 for (let location in data) {
                     const locData = data[location];
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${today}</td>
+                        <td>${date}</td>
                         <td>${location}</td>
                         <td><span class="icon ${locData.night ? 'green' : 'red'}">●</span></td>
                         <td><span class="icon ${locData.early ? 'green' : 'red'}">●</span></td>
@@ -58,19 +59,12 @@
                         const tagData = new TextDecoder().decode(event.message.records[0].data);
                         console.log(`NFC tag data: ${tagData}`);
                         
-                        // Update based on location and time period
                         const timePeriod = getTimePeriod(new Date());
                         
-                        // Dynamically check if the location exists in the database
-                        database.ref(`locations/${tagData}`).once('value').then(function(snapshot) {
-                            if (snapshot.exists()) {
-                                let updates = {};
-                                updates[timePeriod] = true;
-                                database.ref(`locations/${tagData}`).update(updates);
-                            } else {
-                                console.error(`Location '${tagData}' does not exist in the database.`);
-                            }
-                        });
+                        // Update scan data for today
+                        let updates = {};
+                        updates[timePeriod] = true;
+                        database.ref(`scans/${today}/${tagData}`).update(updates);
                     };
 
                     ndef.onreadingerror = () => {
@@ -92,10 +86,26 @@
             return 'late';
         }
 
+        // Function to reset the data for a new day
+        function resetForNewDay() {
+            const locationsRef = database.ref(`scans/${today}`);
+            locationsRef.set({
+                A: { night: false, early: false, late: false },
+                B: { night: false, early: false, late: false },
+                C: { night: false, early: false, late: false },
+                D: { night: false, early: false, late: false }
+            });
+        }
+
+        // View yesterday's logs
+        function viewYesterdayLogs() {
+            updateStatusDisplay(yesterday);
+        }
+
         // Initialize the page on load
         document.addEventListener('DOMContentLoaded', function() {
             setupNFC();
-            updateStatusDisplay();
+            updateStatusDisplay(today);
         });
     </script>
     <style>
@@ -145,6 +155,9 @@
     <div class="admin-link">
         <a href="admin.html">Go to Admin Page</a>
     </div>
+    <div class="admin-link">
+        <button onclick="viewYesterdayLogs()">View Logs for Yesterday</button>
+    </div>
     <table>
         <thead>
             <tr>
@@ -159,5 +172,10 @@
             <!-- Rows will be dynamically added here -->
         </tbody>
     </table>
+
+    <script>
+        // Reset data for a new day when page loads
+        resetForNewDay();
+    </script>
 </body>
 </html>
