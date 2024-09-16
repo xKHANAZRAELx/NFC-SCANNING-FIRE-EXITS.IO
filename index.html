@@ -23,6 +23,29 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // Function to delete data older than 6 months if storage is approaching limits
+        function deleteOldDataIfNeeded() {
+            const today = new Date();
+            const sixMonthsAgo = new Date(today.setMonth(today.getMonth() - 6)).toISOString().slice(0, 10); // 6 months ago
+
+            // Check the database size (simulate a limit check for Firebase free tier)
+            database.ref('scans').once('value', function(snapshot) {
+                const data = snapshot.val();
+                const dataSize = JSON.stringify(data).length; // Approximate size of the data
+                const dataLimit = 900 * 1024 * 1024; // 900 MB limit for safety
+
+                // If we're approaching the data limit, remove data older than 6 months
+                if (dataSize >= dataLimit) {
+                    for (let date in data) {
+                        if (date < sixMonthsAgo) {
+                            database.ref(`scans/${date}`).remove(); // Remove data older than 6 months
+                            console.log(`Data for ${date} deleted (older than 6 months)`);
+                        }
+                    }
+                }
+            });
+        }
+
         // Function to display all locations' scan status for the selected date
         function updateStatusDisplay(date) {
             const locationsRef = database.ref(`scans/${date}`);
@@ -95,11 +118,12 @@
             return 'late';
         }
 
-        // Initialize the page with the latest available data for today's date
+        // Initialize the page with the latest available data for today's date and delete old data if needed
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date().toISOString().slice(0, 10); // Get today's date
             setupNFC();
             updateStatusDisplay(today); // Show today's logs by default
+            deleteOldDataIfNeeded(); // Check for data older than 6 months and delete if necessary
         });
     </script>
     <style>
@@ -167,13 +191,6 @@
         </thead>
         <tbody id="status-table-body">
             <!-- Rows will be dynamically added here -->
-            <tr>
-                <td><input type="date" id="datePicker" onchange="updateDate()" style="border:none;"></td>
-                <td>Example Location</td>
-                <td><span class="icon red">●</span></td>
-                <td><span class="icon red">●</span></td>
-                <td><span class="icon red">●</span></td>
-            </tr>
         </tbody>
     </table>
 </body>
