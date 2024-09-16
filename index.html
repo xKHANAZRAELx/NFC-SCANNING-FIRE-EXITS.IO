@@ -9,6 +9,8 @@
             font-family: Arial, sans-serif;
             text-align: center;
             margin-top: 50px;
+            background-color: #f4f4f4;
+            color: #333;
         }
         .status-icon {
             display: inline-block;
@@ -21,6 +23,8 @@
             width: 100%;
             margin-top: 20px;
             border-collapse: collapse;
+            background-color: white;
+            color: black;
         }
         th, td {
             border: 1px solid #ddd;
@@ -31,6 +35,15 @@
             font-size: 20px;
             margin-top: 20px;
         }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -38,6 +51,8 @@
     <h1>NFC Tag Scanner</h1>
     <p>Place your phone near the NFC tag to scan.</p>
     <div id="output">Waiting for NFC tag...</div>
+
+    <button onclick="window.location.href='admin.html';">Admin Panel</button>
 
     <table>
         <thead>
