@@ -32,17 +32,19 @@
                 const data = snapshot.val();
                 const statusTable = document.getElementById('status-table-body');
                 statusTable.innerHTML = ''; // Clear previous table data
-                for (let location in data) {
-                    const locData = data[location];
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${date}</td>
-                        <td>${location}</td>
-                        <td><span class="icon ${locData.night ? 'green' : 'red'}">●</span></td>
-                        <td><span class="icon ${locData.early ? 'green' : 'red'}">●</span></td>
-                        <td><span class="icon ${locData.late ? 'green' : 'red'}">●</span></td>
-                    `;
-                    statusTable.appendChild(row);
+                if (data) {
+                    for (let location in data) {
+                        const locData = data[location];
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${date}</td>
+                            <td>${location}</td>
+                            <td><span class="icon ${locData.night ? 'green' : 'red'}">●</span></td>
+                            <td><span class="icon ${locData.early ? 'green' : 'red'}">●</span></td>
+                            <td><span class="icon ${locData.late ? 'green' : 'red'}">●</span></td>
+                        `;
+                        statusTable.appendChild(row);
+                    }
                 }
             });
         }
@@ -86,14 +88,23 @@
             return 'late';
         }
 
-        // Function to reset the data for a new day
+        // Function to reset the data for a new day, but only if it hasn't been reset already
         function resetForNewDay() {
-            const locationsRef = database.ref(`scans/${today}`);
-            locationsRef.set({
-                A: { night: false, early: false, late: false },
-                B: { night: false, early: false, late: false },
-                C: { night: false, early: false, late: false },
-                D: { night: false, early: false, late: false }
+            const resetCheckRef = database.ref('resetCheck/' + today);
+            resetCheckRef.once('value', function(snapshot) {
+                if (!snapshot.exists()) {
+                    // Perform the reset
+                    const locationsRef = database.ref(`scans/${today}`);
+                    locationsRef.set({
+                        A: { night: false, early: false, late: false },
+                        B: { night: false, early: false, late: false },
+                        C: { night: false, early: false, late: false },
+                        D: { night: false, early: false, late: false }
+                    });
+
+                    // Mark the reset as done for today
+                    resetCheckRef.set(true);
+                }
             });
         }
 
@@ -174,7 +185,7 @@
     </table>
 
     <script>
-        // Reset data for a new day when page loads
+        // Call reset function only at the start of the day
         resetForNewDay();
     </script>
 </body>
