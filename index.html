@@ -116,21 +116,26 @@
                                 let updates = {};
                                 updates[timePeriod] = true;
                                 database.ref(`scans/${today}/${tagData}`).update(updates);
-                                document.getElementById('error-message').textContent = ''; // Clear error message if the tag is valid
+                                document.getElementById('scan-message').textContent = 'Accepted'; // Show accepted message
+                                document.getElementById('scan-message').style.color = 'green'; // Green message for success
                             } else {
-                                document.getElementById('error-message').textContent = `Error: NFC tag "${tagData}" not recognized or not added to the system.`;
+                                document.getElementById('scan-message').textContent = `Error: NFC tag "${tagData}" not recognized.`;
+                                document.getElementById('scan-message').style.color = 'red'; // Red message for error
                             }
                         });
                     };
 
                     ndef.onreadingerror = () => {
-                        document.getElementById('error-message').textContent = 'Error: Cannot read data from the NFC tag.';
+                        document.getElementById('scan-message').textContent = 'Error: Cannot read data from the NFC tag.';
+                        document.getElementById('scan-message').style.color = 'red';
                     };
                 } catch (error) {
-                    document.getElementById('error-message').textContent = `Error starting NFC scan: ${error.message}`;
+                    document.getElementById('scan-message').textContent = `Error starting NFC scan: ${error.message}`;
+                    document.getElementById('scan-message').style.color = 'red';
                 }
             } else {
-                document.getElementById('error-message').textContent = 'Error: This browser does not support Web NFC.';
+                document.getElementById('scan-message').textContent = 'Error: This browser does not support Web NFC.';
+                document.getElementById('scan-message').style.color = 'red';
             }
         }
 
@@ -197,9 +202,9 @@
             background-color: transparent;
             cursor: pointer;
         }
-        .error-message {
-            color: red;
+        .scan-message {
             text-align: center;
+            font-size: 18px;
             margin-top: 20px;
         }
     </style>
@@ -210,8 +215,8 @@
         <a href="admin.html">Go to Admin Page</a>
     </div>
 
-    <!-- Error message display -->
-    <div id="error-message" class="error-message"></div>
+    <!-- Message display for scan status -->
+    <div id="scan-message" class="scan-message"></div>
 
     <table>
         <thead>
@@ -229,3 +234,4 @@
     </table>
 </body>
 </html>
+
