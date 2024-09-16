@@ -1,143 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fire Exit Monitoring Dashboard</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: center;
-        }
-        th {
-            background-color: #eaeaea;
-            color: #333;
-        }
-        .icon {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: #ff6347; /* Tomato red for unscanned */
-            cursor: pointer;
-        }
-        .scanned {
-            background-color: #32cd32; /* Lime green for scanned */
-        }
-        .date-picker {
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 16px;
-        }
-    </style>
+  <title>NFC Scan Tracker</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script>
+    // Your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDj2uosWcsHdGWm31_w_5LJ-i34IGZY_us",
+      authDomain: "nfc-scan-tracker.firebaseapp.com",
+      databaseURL: "https://nfc-scan-tracker-default-rtdb.firebaseio.com",
+      projectId: "nfc-scan-tracker",
+      storageBucket: "nfc-scan-tracker.appspot.com",
+      messagingSenderId: "565206205474",
+      appId: "1:565206205474:web:5959b2c68c0415a082b67b",
+      measurementId: "G-TWLF5S7T40"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Function to handle NFC tag data
+    function handleNFCScan(nfcData) {
+      // Get a reference to the database location where you want to store the data
+      const ref = database.ref('nfc_scans');
+
+      // Generate a unique ID for the scan (optional)
+      const scanId = Date.now();
+
+      // Create a new entry in the database
+      ref.push({
+        scanId: scanId,
+        nfcData: nfcData,
+        timestamp: Date.now()
+      });
+
+      // Update the UI to display the scanned data (optional)
+      // ...
+    }
+
+    // Example: Simulate NFC scan (replace with actual NFC reading logic)
+    // This is just for demonstration, you'll need to integrate with a browser extension or native app
+    setTimeout(() => {
+      handleNFCScan('Example NFC Tag Data');
+    }, 2000); // Simulate a 2-second delay
+  </script>
 </head>
 <body>
-    <h1>Fire Exit Scan Status</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Date <input type="date" id="datePicker" class="date-picker"></th>
-                <th>Location</th>
-                <th>Night</th>
-                <th>Early</th>
-                <th>Late</th>
-            </tr>
-        </thead>
-        <tbody id="statusTable">
-            <!-- Rows will be dynamically added here -->
-        </tbody>
-    </table>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const statusTableBody = document.getElementById('statusTable');
-            const datePicker = document.getElementById('datePicker');
-            let scans = JSON.parse(localStorage.getItem('scans')) || {};
-
-            datePicker.addEventListener('change', function() {
-                renderTable(datePicker.value);
-            });
-
-            function renderTable(date) {
-                statusTableBody.innerHTML = ''; // Clear the table body
-                const exits = ['A', 'B', 'C', 'D'];
-                exits.forEach(exit => {
-                    let row = statusTableBody.insertRow();
-                    row.insertCell(0).textContent = date ? date : 'Select Date';
-                    row.insertCell(1).textContent = exit;
-
-                    ['Night', 'Early', 'Late'].forEach(period => {
-                        let cell = row.insertCell();
-                        let icon = document.createElement('span');
-                        icon.className = 'icon ' + (scans[date] && scans[date][exit] && scans[date][exit][period] ? 'scanned' : '');
-                        icon.dataset.exit = exit;
-                        icon.dataset.period = period;
-                        cell.appendChild(icon);
-                    });
-                });
-            }
-
-            setupNFC();
-            const today = new Date().toISOString().slice(0, 10);
-            datePicker.value = today; // Set today's date on picker
-            renderTable(today); // Render today's date by default
-        });
-
-        async function setupNFC() {
-            if ("NDEFReader" in window) {
-                const ndef = new NDEFReader();
-                try {
-                    await ndef.scan();
-                    console.log("NFC Scanning started...");
-                    ndef.onreading = event => {
-                        const tag = new TextDecoder().decode(event.message.records[0].data);
-                        const selectedDate = datePicker.value || new Date().toISOString().slice(0, 10);
-                        const exits = ['A', 'B', 'C', 'D'];
-
-                        if (exits.includes(tag)) {
-                            if (!scans[selectedDate]) scans[selectedDate] = {};
-                            if (!scans[selectedDate][tag]) scans[selectedDate][tag] = {Night: false, Early: false, Late: false};
-
-                            ['Night', 'Early', 'Late'].forEach(period => {
-                                scans[selectedDate][tag][period] = true;
-                                updateIcon(selectedDate, tag, period);
-                            });
-
-                            localStorage.setItem('scans', JSON.stringify(scans));
-                        }
-                    };
-                } catch (error) {
-                    console.error("Error: " + error);
-                }
-            } else {
-                console.log("Web NFC is not supported by this browser.");
-            }
-        }
-
-        function updateIcon(date, exit, period) {
-            // Only update icons for the currently selected date to avoid unnecessary DOM manipulation
-            if (date === datePicker.value) {
-                const icons = document.querySelectorAll(`.icon[data-exit="${exit}"][data-period="${period}"]`);
-                if (icons.length > 0) {
-                    icons.forEach(icon => {
-                        icon.className = 'icon scanned';
-                    });
-                }
-            }
-        }
-    </script>
+  <h1>NFC Scan Tracker</h1>
+  <div id="scan-results">
+    <!-- Display scanned data here -->
+  </div>
 </body>
 </html>
