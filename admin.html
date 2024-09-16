@@ -3,97 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>Admin Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDj2uosWcsHdGWm31_w_5LJ-i34IGZY_us",
+            authDomain: "nfc-scan-tracker.firebaseapp.com",
+            databaseURL: "https://nfc-scan-tracker-default-rtdb.firebaseio.com",
+            projectId: "nfc-scan-tracker",
+            storageBucket: "nfc-scan-tracker.appspot.com",
+            messagingSenderId: "565206205474",
+            appId: "1:565206205474:web:5959b2c68c0415a082b67b",
+            measurementId: "G-TWLF5S7T40"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Simple password authentication
+        function checkPassword() {
+            const password = document.getElementById('password').value;
+            if (password === '123') {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                fetchLocations(); // Fetch locations after login
+            } else {
+                alert('Incorrect password, please try again.');
+            }
+        }
+
+        // Function to add a new location
+        function addLocation() {
+            const locationName = document.getElementById('locationName').value;
+            if (locationName) {
+                database.ref('locations/' + locationName).set({
+                    night: false,
+                    early: false,
+                    late: false
+                }).then(() => {
+                    window.location.href = "index.html";
+                });
+            }
+        }
+
+        // Function to remove an existing location
+        function removeLocation(locationName) {
+            if (locationName) {
+                database.ref('locations/' + locationName).remove();
+            }
+        }
+
+        // Function to fetch and display existing locations
+        function fetchLocations() {
+            const locationsRef = database.ref('locations');
+            locationsRef.on('value', function(snapshot) {
+                const locations = snapshot.val();
+                const locationList = document.getElementById('locationList');
+                locationList.innerHTML = ''; // Clear the existing list
+                if (locations) {
+                    for (let location in locations) {
+                        const listItem = document.createElement('div');
+                        listItem.classList.add('location-item');
+                        listItem.innerHTML = `
+                            <span>${location}</span>
+                            <button onclick="removeLocation('${location}')">Remove</button>
+                        `;
+                        locationList.appendChild(listItem);
+                    }
+                } else {
+                    locationList.innerHTML = '<p>No locations available.</p>';
+                }
+            });
+        }
+
+        // Hide admin panel initially
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+        });
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
-            background-color: #f4f4f4;
-            color: #333;
+            margin: 0;
+            padding: 20px;
         }
-        input, button {
-            padding: 10px;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        #adminSection {
-            display: none;
-        }
-        .deleteBtn {
-            color: red;
+        button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #loginForm, #adminPanel {
+            margin-top: 20px;
+        }
+        .location-item {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
         }
     </style>
 </head>
 <body>
-    <div id="loginSection">
-        <h1>Admin Login</h1>
-        <input type="password" id="passwordInput" placeholder="Enter password"/>
-        <button onclick="login()">Login</button>
+    <h1>Admin Dashboard</h1>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+        <input type="password" id="password" placeholder="Enter Password">
+        <button onclick="checkPassword()">Login</button>
     </div>
-    
-    <div id="adminSection">
-        <h1>Admin Panel</h1>
-        <input type="text" id="newLocation" placeholder="Enter new location"/>
+
+    <!-- Admin Panel (hidden until logged in) -->
+    <div id="adminPanel" style="display:none;">
+        <input type="text" id="locationName" placeholder="Enter new location">
         <button onclick="addLocation()">Add Location</button>
-        <h2>Locations:</h2>
-        <ul id="locationList"></ul>
+
+        <h2>Existing Locations</h2>
+        <div id="locationList">
+            <!-- Existing locations will be dynamically added here -->
+        </div>
     </div>
-
-    <script>
-        function login() {
-            var password = document.getElementById('passwordInput').value;
-            if(password === "123") {
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('adminSection').style.display = 'block';
-                loadLocations();
-            } else {
-                alert('Incorrect password, please try again!');
-            }
-        }
-
-        function addLocation() {
-            var location = document.getElementById('newLocation').value.trim();
-            if(location) {
-                var locations = JSON.parse(localStorage.getItem('locations')) || [];
-                if(!locations.includes(location)) { // Avoid adding duplicates
-                    locations.push(location);
-                    localStorage.setItem('locations', JSON.stringify(locations));
-                    displayLocations();
-                    document.getElementById('newLocation').value = ''; // Clear the input after adding
-                }
-            }
-        }
-
-        function loadLocations() {
-            displayLocations();
-        }
-
-        function displayLocations() {
-            var locations = JSON.parse(localStorage.getItem('locations')) || [];
-            var locationList = document.getElementById('locationList');
-            locationList.innerHTML = '';
-            locations.forEach(function(location, index) {
-                var li = document.createElement('li');
-                li.textContent = location;
-                var deleteBtn = document.createElement('span');
-                deleteBtn.textContent = ' Delete';
-                deleteBtn.classList.add('deleteBtn');
-                deleteBtn.onclick = function() { deleteLocation(index); };
-                li.appendChild(deleteBtn);
-                locationList.appendChild(li);
-            });
-        }
-
-        function deleteLocation(index) {
-            var locations = JSON.parse(localStorage.getItem('locations')) || [];
-            locations.splice(index, 1); // Remove the location from the array
-            localStorage.setItem('locations', JSON.stringify(locations));
-            displayLocations(); // Update the display
-        }
-
-        window.addEventListener('load', loadLocations);
-    </script>
 </body>
 </html>

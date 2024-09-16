@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fire Exit Monitoring</title>
+    <title>Fire Exit Monitoring Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script>
-        // Your Firebase configuration
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDj2uosWcsHdGWm31_w_5LJ-i34IGZY_us",
             authDomain: "nfc-scan-tracker.firebaseapp.com",
@@ -23,26 +23,30 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // Function to listen for database changes and update UI
+        // Function to display the current status of locations
         function updateStatusDisplay() {
             const locationsRef = database.ref('locations');
             locationsRef.on('value', function(snapshot) {
                 const data = snapshot.val();
-                const statusContainer = document.getElementById('status-container');
-                statusContainer.innerHTML = ''; // Clear previous contents
+                const statusTable = document.getElementById('status-table-body');
+                statusTable.innerHTML = ''; // Clear previous table data
+                const today = new Date().toISOString().slice(0, 10);
                 for (let location in data) {
                     const locData = data[location];
-                    const locElement = document.createElement('div');
-                    locElement.innerHTML = `<strong>${location}</strong>: ` +
-                        `Night (<span class="icon ${locData.night ? 'green' : 'red'}">●</span>), ` +
-                        `Early (<span class="icon ${locData.early ? 'green' : 'red'}">●</span>), ` +
-                        `Late (<span class="icon ${locData.late ? 'green' : 'red'}">●</span>)`;
-                    statusContainer.appendChild(locElement);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${today}</td>
+                        <td>${location}</td>
+                        <td><span class="icon ${locData.night ? 'green' : 'red'}">●</span></td>
+                        <td><span class="icon ${locData.early ? 'green' : 'red'}">●</span></td>
+                        <td><span class="icon ${locData.late ? 'green' : 'red'}">●</span></td>
+                    `;
+                    statusTable.appendChild(row);
                 }
             });
         }
 
-        // Function to handle NFC tag scanning
+        // Function to handle NFC scanning and update the database
         async function setupNFC() {
             if ('NDEFReader' in window) {
                 const ndef = new NDEFReader();
@@ -54,15 +58,19 @@
                         const tagData = new TextDecoder().decode(event.message.records[0].data);
                         console.log(`NFC tag data: ${tagData}`);
                         
-                        // Assuming the tagData is 'A', 'B', or 'C', update the corresponding location
-                        const now = new Date();
-                        const timePeriod = getTimePeriod(now); // Function to get whether it's Night, Early, or Late
-
-                        if (['A', 'B', 'C'].includes(tagData)) {
-                            let updates = {};
-                            updates[timePeriod] = true;
-                            database.ref(`locations/${tagData}`).update(updates);
-                        }
+                        // Update based on location and time period
+                        const timePeriod = getTimePeriod(new Date());
+                        
+                        // Dynamically check if the location exists in the database
+                        database.ref(`locations/${tagData}`).once('value').then(function(snapshot) {
+                            if (snapshot.exists()) {
+                                let updates = {};
+                                updates[timePeriod] = true;
+                                database.ref(`locations/${tagData}`).update(updates);
+                            } else {
+                                console.error(`Location '${tagData}' does not exist in the database.`);
+                            }
+                        });
                     };
 
                     ndef.onreadingerror = () => {
@@ -84,15 +92,36 @@
             return 'late';
         }
 
-        // Run the NFC setup and update display on page load
+        // Initialize the page on load
         document.addEventListener('DOMContentLoaded', function() {
             setupNFC();
             updateStatusDisplay();
         });
     </script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
         .icon {
-            font-size: larger;
+            font-size: 20px;
         }
         .red {
             color: red;
@@ -100,12 +129,35 @@
         .green {
             color: green;
         }
+        .admin-link {
+            text-align: right;
+            margin-top: 20px;
+        }
+        .admin-link a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <h1>Fire Exit Monitoring Dashboard</h1>
-    <div id="status-container">
-        <!-- Location status will be dynamically added here -->
+    <div class="admin-link">
+        <a href="admin.html">Go to Admin Page</a>
     </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Night</th>
+                <th>Early</th>
+                <th>Late</th>
+            </tr>
+        </thead>
+        <tbody id="status-table-body">
+            <!-- Rows will be dynamically added here -->
+        </tbody>
+    </table>
 </body>
 </html>
