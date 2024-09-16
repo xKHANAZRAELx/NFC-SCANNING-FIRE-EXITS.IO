@@ -48,7 +48,7 @@
     <table>
         <thead>
             <tr>
-                <th>Date <input type="date" id="datePicker" class="date-picker"></th>
+                <th><input type="date" id="datePicker" class="date-picker" placeholder="Select Date"></th>
                 <th>Location</th>
                 <th>Night</th>
                 <th>Early</th>
@@ -71,7 +71,7 @@
             });
 
             function renderTable(date) {
-                statusTableBody.innerHTML = '';
+                statusTableBody.innerHTML = ''; // Clear the table body
                 const exits = ['A', 'B', 'C', 'D'];
                 if (!scans[date]) {
                     scans[date] = {};
@@ -87,13 +87,16 @@
                         let icon = document.createElement('span');
                         icon.className = 'icon ' + (scans[date][exit][period] ? 'scanned' : '');
                         cell.appendChild(icon);
+                        
+                        icon.addEventListener('click', () => {
+                            scans[date][exit][period] = true;
+                            icon.classList.add('scanned');
+                            localStorage.setItem('scans', JSON.stringify(scans));
+                        });
                     });
                 });
             }
 
-            const today = new Date().toISOString().slice(0, 10);
-            datePicker.value = today;
-            renderTable(today);
             setupNFC();
         });
 
@@ -106,12 +109,18 @@
                     ndef.onreading = event => {
                         const tag = event.serialNumber || "";
                         const exits = ['A', 'B', 'C', 'D'];
-                        const today = new Date().toISOString().slice(0, 10);
+                        const selectedDate = datePicker.value || new Date().toISOString().slice(0, 10);
                         
                         if (exits.includes(tag)) {
-                            scans[today][tag] = {Night: true, Early: true, Late: true}; // Assume scan valid for all periods for demo
+                            if (!scans[selectedDate]) {
+                                scans[selectedDate] = {};
+                                exits.forEach(exit => scans[selectedDate][exit] = {Night: false, Early: false, Late: false});
+                            }
+                            ['Night', 'Early', 'Late'].forEach(period => {
+                                scans[selectedDate][tag][period] = true; // Set scan status to true
+                            });
                             localStorage.setItem('scans', JSON.stringify(scans));
-                            renderTable(today);
+                            renderTable(selectedDate); // Update the table display
                         }
                     };
                 } catch (error) {
