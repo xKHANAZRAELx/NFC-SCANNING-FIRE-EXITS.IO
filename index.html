@@ -23,34 +23,43 @@
 
     // Function to handle NFC tag data
     function handleNFCScan(nfcData) {
-      // Get a reference to the database location where you want to store the data
       const ref = database.ref('nfc_scans');
 
-      // Generate a unique ID for the scan (optional)
-      const scanId = Date.now();
-
-      // Create a new entry in the database
+      // Push a new NFC scan entry to Firebase
       ref.push({
-        scanId: scanId,
         nfcData: nfcData,
         timestamp: Date.now()
+      }).then(() => {
+        console.log('NFC scan recorded.');
+      }).catch(error => {
+        console.error('Error recording NFC scan:', error);
       });
-
-      // Update the UI to display the scanned data (optional)
-      // ...
     }
 
-    // Example: Simulate NFC scan (replace with actual NFC reading logic)
-    // This is just for demonstration, you'll need to integrate with a browser extension or native app
+    // Function to listen for new scans and update the UI
+    function displayScans() {
+      const ref = database.ref('nfc_scans');
+      ref.on('child_added', function(snapshot) {
+        const data = snapshot.val();
+        const element = document.createElement('div');
+        element.innerText = `Scanned NFC Tag: ${data.nfcData}, Timestamp: ${new Date(data.timestamp).toLocaleString()}`;
+        document.getElementById('scan-results').appendChild(element);
+      });
+    }
+
+    // Simulate NFC scan (replace with actual NFC reading logic)
     setTimeout(() => {
       handleNFCScan('Example NFC Tag Data');
     }, 2000); // Simulate a 2-second delay
+
+    // Start displaying scans once the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', displayScans);
   </script>
 </head>
 <body>
   <h1>NFC Scan Tracker</h1>
   <div id="scan-results">
-    <!-- Display scanned data here -->
+    <!-- Scanned data will appear here -->
   </div>
 </body>
 </html>
