@@ -23,12 +23,30 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // Function to reset all locations at the start of a new day
+        function resetDailyStatus() {
+            const today = new Date().toISOString().slice(0, 10); // Get today's date
+
+            database.ref('scans').once('value', function(snapshot) {
+                const data = snapshot.val();
+                for (let date in data) {
+                    if (date !== today) {
+                        for (let location in data[date]) {
+                            // Reset Night, Early, Late statuses to false for the new day
+                            let resetStatus = { night: false, early: false, late: false };
+                            database.ref(`scans/${today}/${location}`).set(resetStatus);
+                        }
+                        console.log("Daily reset completed for all locations.");
+                    }
+                }
+            });
+        }
+
         // Function to delete data older than 6 months if storage is approaching limits
         function deleteOldDataIfNeeded() {
             const today = new Date();
             const sixMonthsAgo = new Date(today.setMonth(today.getMonth() - 6)).toISOString().slice(0, 10); // 6 months ago
 
-            // Check the database size (simulate a limit check for Firebase free tier)
             database.ref('scans').once('value', function(snapshot) {
                 const data = snapshot.val();
                 const dataSize = JSON.stringify(data).length; // Approximate size of the data
@@ -129,6 +147,7 @@
             const today = new Date().toISOString().slice(0, 10); // Get today's date
             setupNFC();
             updateStatusDisplay(today); // Show today's logs by default
+            resetDailyStatus(); // Reset the daily status
             deleteOldDataIfNeeded(); // Check for data older than 6 months and delete if necessary
         });
     </script>
