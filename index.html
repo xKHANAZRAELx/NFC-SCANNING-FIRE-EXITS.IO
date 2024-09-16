@@ -22,10 +22,7 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        const today = new Date().toISOString().slice(0, 10); // Today's date (YYYY-MM-DD)
-        const yesterday = new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().slice(0, 10); // Yesterday's date
-
-        // Function to display the current status of locations
+        // Function to display the status of locations for the selected date
         function updateStatusDisplay(date) {
             const locationsRef = database.ref(`scans/${date}`);
             locationsRef.on('value', function(snapshot) {
@@ -37,7 +34,7 @@
                         const locData = data[location];
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td>${date}</td>
+                            <td><input type="date" id="datePicker" value="${date}" onchange="updateDate()" style="border:none;"></td>
                             <td>${location}</td>
                             <td><span class="icon ${locData.night ? 'green' : 'red'}">●</span></td>
                             <td><span class="icon ${locData.early ? 'green' : 'red'}">●</span></td>
@@ -45,12 +42,21 @@
                         `;
                         statusTable.appendChild(row);
                     }
+                } else {
+                    statusTable.innerHTML = `<tr><td colspan="5">No data for this date.</td></tr>`;
                 }
             });
         }
 
-        // Function to handle NFC scanning and update the database
+        // Function to handle date change and update the table accordingly
+        function updateDate() {
+            const selectedDate = document.getElementById('datePicker').value;
+            updateStatusDisplay(selectedDate); // Fetch logs for the selected date
+        }
+
+        // Function to handle NFC scanning and update the database for today
         async function setupNFC() {
+            const today = new Date().toISOString().slice(0, 10); // Today's date (YYYY-MM-DD)
             if ('NDEFReader' in window) {
                 const ndef = new NDEFReader();
                 try {
@@ -88,35 +94,11 @@
             return 'late';
         }
 
-        // Function to reset the data for a new day, but only if it hasn't been reset already
-        function resetForNewDay() {
-            const resetCheckRef = database.ref('resetCheck/' + today);
-            resetCheckRef.once('value', function(snapshot) {
-                if (!snapshot.exists()) {
-                    // Perform the reset
-                    const locationsRef = database.ref(`scans/${today}`);
-                    locationsRef.set({
-                        A: { night: false, early: false, late: false },
-                        B: { night: false, early: false, late: false },
-                        C: { night: false, early: false, late: false },
-                        D: { night: false, early: false, late: false }
-                    });
-
-                    // Mark the reset as done for today
-                    resetCheckRef.set(true);
-                }
-            });
-        }
-
-        // View yesterday's logs
-        function viewYesterdayLogs() {
-            updateStatusDisplay(yesterday);
-        }
-
         // Initialize the page on load
         document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().slice(0, 10); // Today's date (YYYY-MM-DD)
             setupNFC();
-            updateStatusDisplay(today);
+            updateStatusDisplay(today); // Display today's logs by default
         });
     </script>
     <style>
@@ -159,15 +141,18 @@
             color: #007bff;
             font-weight: bold;
         }
+        #datePicker {
+            font-size: 18px;
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <h1>Fire Exit Monitoring Dashboard</h1>
     <div class="admin-link">
         <a href="admin.html">Go to Admin Page</a>
-    </div>
-    <div class="admin-link">
-        <button onclick="viewYesterdayLogs()">View Logs for Yesterday</button>
     </div>
     <table>
         <thead>
@@ -181,12 +166,14 @@
         </thead>
         <tbody id="status-table-body">
             <!-- Rows will be dynamically added here -->
+            <tr>
+                <td><input type="date" id="datePicker" onchange="updateDate()" style="border:none;"></td>
+                <td>Example Location</td>
+                <td><span class="icon red">●</span></td>
+                <td><span class="icon red">●</span></td>
+                <td><span class="icon red">●</span></td>
+            </tr>
         </tbody>
     </table>
-
-    <script>
-        // Call reset function only at the start of the day
-        resetForNewDay();
-    </script>
 </body>
 </html>
