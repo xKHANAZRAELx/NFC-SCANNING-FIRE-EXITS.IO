@@ -7,7 +7,7 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    
+
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
@@ -114,7 +114,7 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .login-section input[type="password"] {
+        .login-section input[type="password"], .admin-section input[type="text"] {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
@@ -122,7 +122,7 @@
             border-radius: 4px;
         }
 
-        .login-section button {
+        .login-section button, .admin-section button {
             width: 100%;
             padding: 10px;
             background-color: #333;
@@ -134,44 +134,43 @@
             transition: background-color 0.3s;
         }
 
-        .login-section button:hover {
+        .login-section button:hover, .admin-section button:hover {
             background-color: #555;
         }
 
-        .admin-section {
-            display: none;
-        }
-
-        .admin-section input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .admin-section button {
-            width: 100%;
-            padding: 10px;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .admin-section button:hover {
-            background-color: #555;
-        }
-
+        /* Make list and buttons responsive */
         .list-group-item {
             background-color: #fff;
             border: 1px solid #ddd;
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 4px;
+        }
+
+        .list-group-item button {
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .list-group-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px;
+            }
+
+            .list-group-item button {
+                padding: 5px 10px;
+                font-size: 14px;
+            }
+
+            .login-section, .admin-section {
+                max-width: 100%;
+                padding: 10px;
+            }
+
+            .login-section input[type="password"], .admin-section input[type="text"], .login-section button, .admin-section button {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
