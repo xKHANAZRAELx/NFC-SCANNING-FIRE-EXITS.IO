@@ -89,7 +89,6 @@
                         const locData = data[location];
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td><input type="date" id="datePicker" onchange="updateDate()" class="form-control"></td>
                             <td>${location}</td>
                             <td><span class="icon ${locData.night ? 'green' : 'red'}">●</span></td>
                             <td><span class="icon ${locData.early ? 'green' : 'red'}">●</span></td>
@@ -98,7 +97,7 @@
                         statusTable.appendChild(row);
                     }
                 } else {
-                    statusTable.innerHTML = `<tr><td colspan="5">No data for this date.</td></tr>`;
+                    statusTable.innerHTML = `<tr><td colspan="4">No data for this date.</td></tr>`;
                 }
             });
         }
@@ -203,6 +202,11 @@
             background-color: #555;
         }
 
+        .date-picker-container {
+            text-align: center;
+            margin: 20px;
+        }
+
         table {
             width: 100%;
             margin: 20px auto;
@@ -247,6 +251,16 @@
             font-weight: bold;
             transition: opacity 0.3s ease;
         }
+
+        /* Date picker styles */
+        #datePicker {
+            font-size: 18px;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -256,13 +270,18 @@
             <a href="admin.html">Go to Admin Page</a>
         </div>
 
+        <!-- Single date picker for the entire table -->
+        <div class="date-picker-container">
+            <label for="datePicker">Select Date: </label>
+            <input type="date" id="datePicker" onchange="updateDate()" />
+        </div>
+
         <!-- Message display for scan status -->
         <div id="scan-message" class="scan-message"></div>
 
         <table class="table table-bordered">
             <thead class="thead-dark">
                 <tr>
-                    <th>Date</th>
                     <th>Location</th>
                     <th>Night</th>
                     <th>Early</th>
@@ -281,3 +300,4 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
+
