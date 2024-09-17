@@ -32,16 +32,26 @@
         function resetDailyStatus() {
             const today = new Date().toISOString().slice(0, 10); // Get today's date
 
-            database.ref('scans').once('value', function(snapshot) {
-                const data = snapshot.val();
-                for (let date in data) {
-                    if (date !== today) {
-                        for (let location in data[date]) {
-                            let resetStatus = { night: false, early: false, late: false };
-                            database.ref(`scans/${today}/${location}`).set(resetStatus);
+            // Check if the reset has already happened today
+            const resetRef = database.ref(`reset/${today}`);
+            resetRef.once('value', function(snapshot) {
+                if (!snapshot.exists()) {
+                    // Perform the reset if it hasn't been done today
+                    database.ref('scans').once('value', function(snapshot) {
+                        const data = snapshot.val();
+                        for (let date in data) {
+                            if (date !== today) {
+                                for (let location in data[date]) {
+                                    let resetStatus = { night: false, early: false, late: false };
+                                    database.ref(`scans/${today}/${location}`).set(resetStatus);
+                                }
+                            }
                         }
                         console.log("Daily reset completed for all locations.");
-                    }
+                    });
+
+                    // Mark reset as completed for today
+                    resetRef.set(true);
                 }
             });
         }
