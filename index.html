@@ -32,11 +32,9 @@
         function resetDailyStatus() {
             const today = new Date().toISOString().slice(0, 10); // Get today's date
 
-            // Check if the reset has already happened today
             const resetRef = database.ref(`reset/${today}`);
             resetRef.once('value', function(snapshot) {
                 if (!snapshot.exists()) {
-                    // Perform the reset if it hasn't been done today
                     database.ref('scans').once('value', function(snapshot) {
                         const data = snapshot.val();
                         for (let date in data) {
@@ -49,8 +47,6 @@
                         }
                         console.log("Daily reset completed for all locations.");
                     });
-
-                    // Mark reset as completed for today
                     resetRef.set(true);
                 }
             });
@@ -59,17 +55,17 @@
         // Function to delete data older than 6 months if storage is approaching limits
         function deleteOldDataIfNeeded() {
             const today = new Date();
-            const sixMonthsAgo = new Date(today.setMonth(today.getMonth() - 6)).toISOString().slice(0, 10); // 6 months ago
+            const sixMonthsAgo = new Date(today.setMonth(today.getMonth() - 6)).toISOString().slice(0, 10);
 
             database.ref('scans').once('value', function(snapshot) {
                 const data = snapshot.val();
-                const dataSize = JSON.stringify(data).length; // Approximate size of the data
-                const dataLimit = 900 * 1024 * 1024; // 900 MB limit for safety
+                const dataSize = JSON.stringify(data).length;
+                const dataLimit = 900 * 1024 * 1024;
 
                 if (dataSize >= dataLimit) {
                     for (let date in data) {
                         if (date < sixMonthsAgo) {
-                            database.ref(`scans/${date}`).remove(); // Remove data older than 6 months
+                            database.ref(`scans/${date}`).remove();
                             console.log(`Data for ${date} deleted (older than 6 months)`);
                         }
                     }
@@ -80,10 +76,14 @@
         // Function to display all locations' scan status for the selected date
         function updateStatusDisplay(date) {
             const locationsRef = database.ref(`scans/${date}`);
+            
             locationsRef.on('value', function(snapshot) {
                 const data = snapshot.val();
+                console.log("Data fetched for date:", date, data);
+
                 const statusTable = document.getElementById('status-table-body');
                 statusTable.innerHTML = ''; // Clear previous data
+
                 if (data) {
                     for (let location in data) {
                         const locData = data[location];
@@ -97,8 +97,11 @@
                         statusTable.appendChild(row);
                     }
                 } else {
+                    console.log("No data found for this date.");
                     statusTable.innerHTML = `<tr><td colspan="4">No data for this date.</td></tr>`;
                 }
+            }, (error) => {
+                console.error("Error fetching data:", error);
             });
         }
 
@@ -129,12 +132,12 @@
                                 updates[timePeriod] = true;
                                 database.ref(`scans/${today}/${tagData}`).update(updates);
 
-                                document.getElementById('scan-message').textContent = 'Accepted'; // Show accepted message
-                                document.getElementById('scan-message').style.color = 'green'; // Green message for success
-                                setTimeout(() => { document.getElementById('scan-message').textContent = ''; }, 3000); // Clear message after 3 seconds
+                                document.getElementById('scan-message').textContent = 'Accepted';
+                                document.getElementById('scan-message').style.color = 'green';
+                                setTimeout(() => { document.getElementById('scan-message').textContent = ''; }, 3000);
                             } else {
-                                document.getElementById('scan-message').textContent = `Error: NFC tag "${tagData}" not recognized or not in database.`; // Error message for unrecognized tag
-                                document.getElementById('scan-message').style.color = 'red'; // Red message for error
+                                document.getElementById('scan-message').textContent = `Error: NFC tag "${tagData}" not recognized or not in database.`;
+                                document.getElementById('scan-message').style.color = 'red';
                             }
                         });
                     };
@@ -170,12 +173,14 @@
             deleteOldDataIfNeeded(); // Check for data older than 6 months and delete if necessary
         });
     </script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #ffffff;
             color: #333;
         }
+
         h1 {
             text-align: center;
             background-color: #333;
@@ -297,7 +302,7 @@
     <!-- Bootstrap JS and Popper.js -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://stackpath.bootstrap.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
 
